@@ -394,3 +394,225 @@ func TestParseWithRefArray(t *testing.T) {
 		t.Errorf("Expected entity reference type to be http://example.com/Employee, got %s", refTypes[1])
 	}
 }
+
+func TestParseWithEmbeddedAnonymousEntity(t *testing.T) {
+
+	nsManager := NewNamespaceContext()
+	entityCollection := NewEntityCollection(nsManager)
+	parser := NewEntityParser(nsManager, true)
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "@context", 
+				"namespaces": {
+					"ex": "http://example.com/",
+					"rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+				}
+			},
+			{
+				"id" : "ex:1",
+				"props": {
+					"http://example.com/address": {
+						"props": {
+							"http://example.com/street": "123 Main Street"
+						}
+					}
+				}
+			}
+		]`))
+
+	err := parser.Parse(byteReader, entityCollection.AddEntity, entityCollection.SetContinuationToken)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+	if len(entityCollection.Entities) != 1 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "http://example.com/1" {
+		t.Errorf("Expected entity id to be http://example.com/1, got %s", entityCollection.Entities[0].ID)
+	}
+	if len(entityCollection.Entities[0].Properties) != 1 {
+		t.Errorf("Expected entity properties to have 1 property, got %d", len(entityCollection.Entities[0].Properties))
+	}
+
+	embeddedEntity := entityCollection.Entities[0].Properties["http://example.com/address"].(*Entity)
+
+	if len(embeddedEntity.Properties) != 1 {
+		t.Errorf("Expected embedded entity properties to have 1 property, got %d", len(embeddedEntity.Properties))
+	}
+
+	if embeddedEntity.Properties["http://example.com/street"] != "123 Main Street" {
+		t.Errorf("Expected embedded entity property street to be 123 Main Street, got %s", embeddedEntity.Properties["http://example.com/street"])
+	}
+
+}
+
+func TestParseWithEmbeddedEntityWithIdentity(t *testing.T) {
+
+	nsManager := NewNamespaceContext()
+	entityCollection := NewEntityCollection(nsManager)
+	parser := NewEntityParser(nsManager, true)
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "@context", 
+				"namespaces": {
+					"ex": "http://example.com/",
+					"rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+				}
+			},
+			{
+				"id" : "ex:1",
+				"props": {
+					"http://example.com/address": {
+						"id": "ex:2",
+						"props": {
+							"http://example.com/street": "123 Main Street"
+						}
+					}
+				}
+			}
+		]`))
+
+	err := parser.Parse(byteReader, entityCollection.AddEntity, entityCollection.SetContinuationToken)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+	if len(entityCollection.Entities) != 1 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "http://example.com/1" {
+		t.Errorf("Expected entity id to be http://example.com/1, got %s", entityCollection.Entities[0].ID)
+	}
+	if len(entityCollection.Entities[0].Properties) != 1 {
+		t.Errorf("Expected entity properties to have 1 property, got %d", len(entityCollection.Entities[0].Properties))
+	}
+
+	embeddedEntity := entityCollection.Entities[0].Properties["http://example.com/address"].(*Entity)
+
+	if len(embeddedEntity.Properties) != 1 {
+		t.Errorf("Expected embedded entity properties to have 1 property, got %d", len(embeddedEntity.Properties))
+	}
+	if embeddedEntity.Properties["http://example.com/street"] != "123 Main Street" {
+		t.Errorf("Expected embedded entity property street to be 123 Main Street, got %s", embeddedEntity.Properties["http://example.com/street"])
+	}
+	if embeddedEntity.ID != "http://example.com/2" {
+		t.Errorf("Expected embedded entity id to be http://example.com/2, got %s", embeddedEntity.ID)
+	}
+
+}
+
+func TestParseWithEmbeddedEntityArray(t *testing.T) {
+
+	nsManager := NewNamespaceContext()
+	entityCollection := NewEntityCollection(nsManager)
+	parser := NewEntityParser(nsManager, true)
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "@context", 
+				"namespaces": {
+					"ex": "http://example.com/",
+					"rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+				}
+			},
+			{
+				"id" : "ex:1",
+				"props": {
+					"http://example.com/addresses": 
+						[
+							{
+								"id": "ex:2",
+								"props": {
+									"http://example.com/street": "123 Main Street"
+								},
+								"refs": {
+									"http://example.com/country": "ex:5"
+								}
+							},
+							{
+								"id": "ex:3",
+								"props": {
+									"http://example.com/street": "125 Main Street"
+								},
+								"refs": {
+									"http://example.com/country": "ex:6"
+								}
+							}
+						]	
+				}
+			}
+		]`))
+
+	err := parser.Parse(byteReader, entityCollection.AddEntity, entityCollection.SetContinuationToken)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+	if len(entityCollection.Entities) != 1 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "http://example.com/1" {
+		t.Errorf("Expected entity id to be http://example.com/1, got %s", entityCollection.Entities[0].ID)
+	}
+	if len(entityCollection.Entities[0].Properties) != 1 {
+		t.Errorf("Expected entity properties to have 1 property, got %d", len(entityCollection.Entities[0].Properties))
+	}
+	if len(entityCollection.Entities[0].References) != 0 {
+		t.Errorf("Expected entity references to have 0 properties, got %d", len(entityCollection.Entities[0].References))
+	}
+
+	embeddedEntityArrayAny := entityCollection.Entities[0].Properties["http://example.com/addresses"].([]any)
+	embeddedEntityArray := make([]*Entity, len(embeddedEntityArrayAny))
+	for i, v := range embeddedEntityArrayAny {
+		embeddedEntityArray[i] = v.(*Entity)
+	}
+
+	if len(embeddedEntityArray) != 2 {
+		t.Errorf("Expected embedded entity array to have 2 elements, got %d", len(embeddedEntityArray))
+	}
+
+	embeddedEntity := embeddedEntityArray[0]
+
+	if len(embeddedEntity.Properties) != 1 {
+		t.Errorf("Expected embedded entity properties to have 1 property, got %d", len(embeddedEntity.Properties))
+	}
+	if embeddedEntity.Properties["http://example.com/street"] != "123 Main Street" {
+		t.Errorf("Expected embedded entity property street to be 123 Main Street, got %s", embeddedEntity.Properties["http://example.com/street"])
+	}
+
+	if embeddedEntity.ID != "http://example.com/2" {
+		t.Errorf("Expected embedded entity id to be http://example.com/2, got %s", embeddedEntity.ID)
+	}
+
+	if len(embeddedEntity.References) != 1 {
+		t.Errorf("Expected embedded entity references to have 1 property, got %d", len(embeddedEntity.References))
+	}
+	if embeddedEntity.References["http://example.com/country"] != "http://example.com/5" {
+		t.Errorf("Expected embedded entity reference country to be http://example.com/5, got %s", embeddedEntity.References["http://example.com/country"])
+	}
+
+	embeddedEntity = embeddedEntityArray[1]
+
+	if len(embeddedEntity.Properties) != 1 {
+		t.Errorf("Expected embedded entity properties to have 1 property, got %d", len(embeddedEntity.Properties))
+	}
+	if embeddedEntity.Properties["http://example.com/street"] != "125 Main Street" {
+		t.Errorf("Expected embedded entity property street to be 125 Main Street, got %s", embeddedEntity.Properties["http://example.com/street"])
+	}
+	if embeddedEntity.ID != "http://example.com/3" {
+		t.Errorf("Expected embedded entity id to be http://example.com/3, got %s", embeddedEntity.ID)
+	}
+	if len(embeddedEntity.References) != 1 {
+		t.Errorf("Expected embedded entity references to have 1 property, got %d", len(embeddedEntity.References))
+	}
+	if embeddedEntity.References["http://example.com/country"] != "http://example.com/6" {
+		t.Errorf("Expected embedded entity reference country to be http://example.com/6, got %s", embeddedEntity.References["http://example.com/country"])
+	}
+
+}
