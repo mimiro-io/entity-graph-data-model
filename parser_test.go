@@ -743,3 +743,56 @@ func TestParseRoundTripEntityCollection(t *testing.T) {
 	}
 
 }
+
+func TestToJSONLDWithEmbeddedEntityArray(t *testing.T) {
+
+	nsManager := NewNamespaceContext()
+	entityCollection := NewEntityCollection(nsManager)
+	parser := NewEntityParser(nsManager, true)
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "@context", 
+				"namespaces": {
+					"ex": "http://example.com/",
+					"rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+				}
+			},
+			{
+				"id" : "ex:1",
+				"props": {
+					"http://example.com/addresses": 
+						[
+							{
+								"props": {
+									"http://example.com/street": "123 Main Street"
+								},
+								"refs": {
+									"http://example.com/country": "ex:5"
+								}
+							},
+							{
+								"props": {
+									"http://example.com/street": "125 Main Street"
+								},
+								"refs": {
+									"http://example.com/country": "ex:6"
+								}
+							}
+						]	
+				}
+			}
+		]`))
+
+	err := parser.Parse(byteReader, entityCollection.AddEntity, entityCollection.SetContinuationToken)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+
+	// write it out again
+	bytesBuffer := bytes.Buffer{}
+	entityCollection.WriteJSON_LD(&bytesBuffer)
+
+}

@@ -107,8 +107,6 @@ func (ec *EntityCollection) WriteEntityGraphJSON(writer io.Writer) error {
 }
 
 func (ec *EntityCollection) WriteJSON_LD(writer io.Writer) error {
-	encoder := json.NewEncoder(writer)
-	encoder.SetIndent("", "  ")
-	encoder.Encode(ec)
-	return nil
+	jsonLDWriter := &JsonLDWriter{}
+	return jsonLDWriter.Write(ec, writer)
 }
