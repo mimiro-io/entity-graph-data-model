@@ -1,14 +1,11 @@
 package egdm
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"strings"
-
-	// try a potential alternative to encoding/json
-	// json "github.com/goccy/go-json"
-	"encoding/json"
 )
 
 type Parser interface {
