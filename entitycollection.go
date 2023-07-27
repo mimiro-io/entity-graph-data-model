@@ -87,11 +87,7 @@ func (ec *EntityCollection) WriteEntityGraphJSON(writer io.Writer) error {
 
 	// write continuation if not nil
 	if ec.Continuation != nil {
-		_, err = writer.Write([]byte(",\n"))
-		if err != nil {
-			return err
-		}
-		_, err = writer.Write([]byte(", {\"id\":\"@continuation\",\"token\":\"" + ec.Continuation.Token + "\"}]"))
+		_, err = writer.Write([]byte(", {\"id\":\"@continuation\",\"token\":\"" + ec.Continuation.Token + "\"}"))
 		if err != nil {
 			return err
 		}

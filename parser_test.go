@@ -657,6 +657,10 @@ func TestParseRoundTripEntityCollection(t *testing.T) {
 							}
 						]	
 				}
+			},
+			{
+				"id" : "@continuation",
+				"token" : "1234567890"	
 			}
 		]`))
 
@@ -742,6 +746,9 @@ func TestParseRoundTripEntityCollection(t *testing.T) {
 		t.Errorf("Expected embedded entity reference country to be http://example.com/6, got %s", embeddedEntity.References["http://example.com/country"])
 	}
 
+	if entityCollection.Continuation.Token != "1234567890" {
+		t.Errorf("Expected continuation token to be 1234567890, got %s", entityCollection.Continuation.Token)
+	}
 }
 
 func TestToJSONLDWithEmbeddedEntityArray(t *testing.T) {

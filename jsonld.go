@@ -16,7 +16,7 @@ func (jsonLDWriter *JsonLDWriter) Write(ec *EntityCollection, writer io.Writer) 
 	var err error
 
 	// write [
-	_, err = writer.Write([]byte("[\n"))
+	_, err = writer.Write([]byte("["))
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (jsonLDWriter *JsonLDWriter) Write(ec *EntityCollection, writer io.Writer) 
 
 	// write entities
 	for _, entity := range ec.Entities {
-		_, err = writer.Write([]byte(",\n"))
+		_, err = writer.Write([]byte(","))
 		if err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ func (jsonLDWriter *JsonLDWriter) Write(ec *EntityCollection, writer io.Writer) 
 
 	// write continuation if not nil
 	if ec.Continuation != nil {
-		_, err = writer.Write([]byte(",\n"))
+		_, err = writer.Write([]byte(","))
 		if err != nil {
 			return err
 		}
@@ -61,7 +61,7 @@ func (jsonLDWriter *JsonLDWriter) Write(ec *EntityCollection, writer io.Writer) 
 	}
 
 	// write ]
-	_, err = writer.Write([]byte("\n]"))
+	_, err = writer.Write([]byte("]"))
 	if err != nil {
 		return err
 	}

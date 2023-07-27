@@ -85,9 +85,15 @@ func (esp *EntityParser) Parse(reader io.Reader, emitEntity func(*Entity) error,
 				if err != nil {
 					return fmt.Errorf("parsing error: Unable to parse entity: %w", err)
 				}
-				err = emitEntity(e)
-				if err != nil {
-					return err
+				if e.ID == "@continuation" {
+					if emitContinuation != nil {
+						emitContinuation(&Continuation{Token: e.Properties["token"].(string)})
+					}
+				} else {
+					err = emitEntity(e)
+					if err != nil {
+						return err
+					}
 				}
 			} else if v == ']' {
 				// done
