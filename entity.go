@@ -12,7 +12,7 @@ type Entity struct {
 }
 
 func (anEntity *Entity) GetFirstReferenceValue(typeURI string) (string, error) {
-	if values, found := anEntity.GetReferenceValues(typeURI); found != nil {
+	if values, found := anEntity.GetReferenceValues(typeURI); found == nil {
 		if len(values) == 0 {
 			return "", errors.New("no reference for type")
 		}
@@ -36,7 +36,7 @@ func (anEntity *Entity) GetReferenceValues(typeURI string) ([]string, error) {
 }
 
 func (anEntity *Entity) GetFirstStringPropertyValue(typeURI string) (string, error) {
-	if values, found := anEntity.GetStringPropertyValues(typeURI); found != nil {
+	if values, found := anEntity.GetStringPropertyValues(typeURI); found == nil {
 		if len(values) == 0 {
 			return "", errors.New("no reference for type")
 		}
@@ -61,7 +61,7 @@ func (anEntity *Entity) GetStringPropertyValues(typeURI string) ([]string, error
 }
 
 func (anEntity *Entity) GetFirstBooleanPropertyValue(typeURI string) (bool, error) {
-	if values, found := anEntity.GetBooleanPropertyValues(typeURI); found != nil {
+	if values, found := anEntity.GetBooleanPropertyValues(typeURI); found == nil {
 		if len(values) == 0 {
 			return false, errors.New("no reference for type")
 		}
@@ -85,7 +85,7 @@ func (anEntity *Entity) GetBooleanPropertyValues(typeURI string) ([]bool, error)
 }
 
 func (anEntity *Entity) GetFirstIntPropertyValue(typeURI string) (int, error) {
-	if values, found := anEntity.GetIntPropertyValues(typeURI); found != nil {
+	if values, found := anEntity.GetIntPropertyValues(typeURI); found == nil {
 		if len(values) == 0 {
 			return 0, errors.New("no reference for type")
 		}
@@ -119,7 +119,7 @@ func (anEntity *Entity) GetIntPropertyValues(typeURI string) ([]int, error) {
 }
 
 func (anEntity *Entity) GetFirstFloatPropertyValue(typeURI string) (float64, error) {
-	if values, found := anEntity.GetFloatPropertyValues(typeURI); found != nil {
+	if values, found := anEntity.GetFloatPropertyValues(typeURI); found == nil {
 		if len(values) == 0 {
 			return 0, errors.New("no reference for type")
 		}
