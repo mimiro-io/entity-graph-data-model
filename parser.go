@@ -10,6 +10,7 @@ import (
 
 type Parser interface {
 	Parse(data io.Reader, entity func(*Entity) error, continuation func(*Continuation)) error
+	LoadEntityCollection(reader io.Reader) (*EntityCollection, error)
 }
 
 type EntityParser struct {
@@ -22,6 +23,19 @@ func NewEntityParser(nsmanager NamespaceManager, expandURIs bool) *EntityParser 
 	ep.nsManager = nsmanager
 	ep.expandURIs = expandURIs
 	return ep
+}
+
+func (esp *EntityParser) LoadEntityCollection(reader io.Reader) (*EntityCollection, error) {
+	ec := NewEntityCollection(esp.nsManager)
+	err := esp.Parse(reader, func(e *Entity) error {
+		return ec.AddEntity(e)
+	}, func(c *Continuation) {
+		ec.SetContinuationToken(c)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ec, nil
 }
 
 func (esp *EntityParser) GetIdentityValue(value string) (string, error) {
