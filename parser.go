@@ -15,19 +15,34 @@ type Parser interface {
 }
 
 type EntityParser struct {
-	nsManager        NamespaceManager
-	expandURIs       bool
-	collapseFullURIs bool
-	requireContext   bool
+	nsManager      NamespaceManager
+	expandURIs     bool
+	compressURIs   bool
+	requireContext bool
 }
 
-func NewEntityParser(nsmanager NamespaceManager, requireContext bool, expandURIs bool, collapseFullURIs bool) *EntityParser {
+func NewEntityParser(nsmanager NamespaceManager) *EntityParser {
 	ep := &EntityParser{}
 	ep.nsManager = nsmanager
-	ep.expandURIs = expandURIs
-	ep.collapseFullURIs = collapseFullURIs
-	ep.requireContext = requireContext
+	ep.expandURIs = false
+	ep.compressURIs = false
+	ep.requireContext = true
 	return ep
+}
+
+func (esp *EntityParser) WithNoContext() *EntityParser {
+	esp.requireContext = false
+	return esp
+}
+
+func (esp *EntityParser) WithExpandURIs() *EntityParser {
+	esp.expandURIs = true
+	return esp
+}
+
+func (esp *EntityParser) WithCompressURIs() *EntityParser {
+	esp.expandURIs = true
+	return esp
 }
 
 func (esp *EntityParser) GetNamespaceManager() NamespaceManager {
@@ -49,16 +64,20 @@ func (esp *EntityParser) LoadEntityCollection(reader io.Reader) (*EntityCollecti
 
 func (esp *EntityParser) GetIdentityValue(value string) (string, error) {
 
-	if esp.collapseFullURIs {
-		if esp.nsManager.IsFullUri(value) {
-			esp.nsManager.AssertPrefixFromURI(value)
+	identity := value
+	var err error
+
+	if esp.compressURIs {
+		identity, err = esp.nsManager.AssertPrefixFromURI(value)
+		if err != nil {
+			return "", err
 		}
 	}
 
 	if esp.expandURIs {
-		return esp.nsManager.GetFullURI(value)
+		return esp.nsManager.GetFullURI(identity)
 	} else {
-		return esp.nsManager.GetPrefixedIdentifier(value)
+		return esp.nsManager.GetPrefixedIdentifier(identity)
 	}
 }
 

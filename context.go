@@ -27,12 +27,14 @@ func (aContext *NamespaceContext) AssertPrefixFromURI(URI string) (string, error
 
 		// check if expansion exists
 		if _, found := aContext.expansionToPrefixMappings[postFix]; found {
-			return prefix, nil
+			return prefix + ":" + postFix, nil
 		} else {
 			// generate new prefix
 			shortCode := fmt.Sprintf("ns%d", len(aContext.expansionToPrefixMappings))
 			// store prefix expansion mapping
 			aContext.StorePrefixExpansionMapping(shortCode, prefix)
+
+			return shortCode + ":" + postFix, nil
 		}
 	} else {
 		lastSlash := strings.LastIndex(URI, "/")
@@ -42,13 +44,14 @@ func (aContext *NamespaceContext) AssertPrefixFromURI(URI string) (string, error
 
 			// check if expansion exists
 			if _, found := aContext.expansionToPrefixMappings[postFix]; found {
-				return prefix, nil
+				return prefix + ":" + postFix, nil
 			} else {
 				// generate new prefix
 				shortCode := fmt.Sprintf("ns%d", len(aContext.expansionToPrefixMappings))
 
 				// store prefix expansion mapping
 				aContext.StorePrefixExpansionMapping(shortCode, prefix)
+				return shortCode + ":" + postFix, nil
 			}
 		}
 	}
