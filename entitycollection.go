@@ -45,6 +45,18 @@ func (ec *EntityCollection) GetNamespaceMappings() map[string]string {
 	return ec.NamespaceManager.GetNamespaceMappings()
 }
 
+type Context struct {
+	ID         string            `json:"id"`
+	Namespaces map[string]string `json:"namespaces"`
+}
+
+func NewContext() *Context {
+	c := &Context{}
+	c.ID = "@context"
+	c.Namespaces = make(map[string]string)
+	return c
+}
+
 func (ec *EntityCollection) WriteEntityGraphJSON(writer io.Writer) error {
 	var err error
 
@@ -54,13 +66,8 @@ func (ec *EntityCollection) WriteEntityGraphJSON(writer io.Writer) error {
 		return err
 	}
 
-	type Context struct {
-		ID         string            `json:"id"`
-		Namespaces map[string]string `json:"namespaces"`
-	}
-
 	// write context
-	context := &Context{}
+	context := NewContext()
 	context.ID = "@context"
 	context.Namespaces = ec.NamespaceManager.GetNamespaceMappings()
 	contextJson, _ := json.Marshal(context)
@@ -87,7 +94,15 @@ func (ec *EntityCollection) WriteEntityGraphJSON(writer io.Writer) error {
 
 	// write continuation if not nil
 	if ec.Continuation != nil {
-		_, err = writer.Write([]byte(", {\"id\":\"@continuation\",\"token\":\"" + ec.Continuation.Token + "\"}"))
+		contJson, err := json.Marshal(ec.Continuation)
+		if err != nil {
+			return err
+		}
+		_, err = writer.Write([]byte(", "))
+		if err != nil {
+			return err
+		}
+		_, err = writer.Write([]byte(contJson))
 		if err != nil {
 			return err
 		}

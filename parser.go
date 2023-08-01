@@ -11,18 +11,27 @@ import (
 type Parser interface {
 	Parse(data io.Reader, entity func(*Entity) error, continuation func(*Continuation)) error
 	LoadEntityCollection(reader io.Reader) (*EntityCollection, error)
+	GetNamespaceManager() NamespaceManager
 }
 
 type EntityParser struct {
-	nsManager  NamespaceManager
-	expandURIs bool
+	nsManager        NamespaceManager
+	expandURIs       bool
+	collapseFullURIs bool
+	requireContext   bool
 }
 
-func NewEntityParser(nsmanager NamespaceManager, expandURIs bool) *EntityParser {
+func NewEntityParser(nsmanager NamespaceManager, requireContext bool, expandURIs bool, collapseFullURIs bool) *EntityParser {
 	ep := &EntityParser{}
 	ep.nsManager = nsmanager
 	ep.expandURIs = expandURIs
+	ep.collapseFullURIs = collapseFullURIs
+	ep.requireContext = requireContext
 	return ep
+}
+
+func (esp *EntityParser) GetNamespaceManager() NamespaceManager {
+	return esp.nsManager
 }
 
 func (esp *EntityParser) LoadEntityCollection(reader io.Reader) (*EntityCollection, error) {
@@ -39,6 +48,13 @@ func (esp *EntityParser) LoadEntityCollection(reader io.Reader) (*EntityCollecti
 }
 
 func (esp *EntityParser) GetIdentityValue(value string) (string, error) {
+
+	if esp.collapseFullURIs {
+		if esp.nsManager.IsFullUri(value) {
+			esp.nsManager.AssertPrefixFromURI(value)
+		}
+	}
+
 	if esp.expandURIs {
 		return esp.nsManager.GetFullURI(value)
 	} else {
@@ -61,25 +77,27 @@ func (esp *EntityParser) Parse(reader io.Reader, emitEntity func(*Entity) error,
 	}
 
 	// decode context object
-	context := make(map[string]any)
-	err = decoder.Decode(&context)
-	if err != nil {
-		return fmt.Errorf("parsing error: Unable to decode context: %w", err)
-	}
+	if esp.requireContext {
+		context := make(map[string]any)
+		err = decoder.Decode(&context)
+		if err != nil {
+			return fmt.Errorf("parsing error: Unable to decode context: %w", err)
+		}
 
-	if context["id"] == "@context" {
-		if context["namespaces"] != nil {
-			for k, v := range context["namespaces"].(map[string]any) {
-				expansion := v.(string)
-				if strings.HasSuffix(expansion, "/") || strings.HasSuffix(expansion, "#") {
-					esp.nsManager.StorePrefixExpansionMapping(k, v.(string))
-				} else {
-					return fmt.Errorf("expansion %s for prefix %s must end with / or #", expansion, k)
+		if context["id"] == "@context" {
+			if context["namespaces"] != nil {
+				for k, v := range context["namespaces"].(map[string]any) {
+					expansion := v.(string)
+					if strings.HasSuffix(expansion, "/") || strings.HasSuffix(expansion, "#") {
+						esp.nsManager.StorePrefixExpansionMapping(k, v.(string))
+					} else {
+						return fmt.Errorf("expansion %s for prefix %s must end with / or #", expansion, k)
+					}
 				}
 			}
+		} else {
+			return errors.New("first object in array must be a context with id @context")
 		}
-	} else {
-		return errors.New("first object in array must be a context with id @context")
 	}
 
 	for {
@@ -101,7 +119,9 @@ func (esp *EntityParser) Parse(reader io.Reader, emitEntity func(*Entity) error,
 				}
 				if e.ID == "@continuation" {
 					if emitContinuation != nil {
-						emitContinuation(&Continuation{Token: e.Properties["token"].(string)})
+						continuation := NewContinuation()
+						continuation.Token = e.Properties["token"].(string)
+						emitContinuation(continuation)
 					}
 				} else {
 					err = emitEntity(e)
@@ -147,6 +167,8 @@ func (esp *EntityParser) parseEntity(decoder *json.Decoder) (*Entity, error) {
 				if val.(string) == "@continuation" {
 					e.ID = "@continuation"
 					isContinuation = true
+				} else if val.(string) == "@context" {
+					return nil, errors.New("context object found when entity expected")
 				} else {
 					id, err := esp.GetIdentityValue(val.(string))
 					if err != nil {
@@ -160,7 +182,6 @@ func (esp *EntityParser) parseEntity(decoder *json.Decoder) (*Entity, error) {
 					return nil, fmt.Errorf("unable to read token of recorded value: %w", err)
 				}
 				e.Recorded = uint64(val.(float64))
-
 			} else if v == "deleted" {
 				val, err := decoder.Token()
 				if err != nil {

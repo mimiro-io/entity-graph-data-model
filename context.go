@@ -2,6 +2,7 @@ package egdm
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -15,6 +16,43 @@ func NewNamespaceContext() *NamespaceContext {
 type NamespaceContext struct {
 	prefixToExpansionMappings map[string]string
 	expansionToPrefixMappings map[string]string
+}
+
+func (aContext *NamespaceContext) AssertPrefixFromURI(URI string) (string, error) {
+	// find last hash or slash
+	lastHash := strings.LastIndex(URI, "#")
+	if lastHash > 0 {
+		prefix := URI[lastHash+1:]
+		postFix := URI[:lastHash]
+
+		// check if expansion exists
+		if _, found := aContext.expansionToPrefixMappings[postFix]; found {
+			return prefix, nil
+		} else {
+			// generate new prefix
+			shortCode := fmt.Sprintf("ns%d", len(aContext.expansionToPrefixMappings))
+			// store prefix expansion mapping
+			aContext.StorePrefixExpansionMapping(shortCode, prefix)
+		}
+	} else {
+		lastSlash := strings.LastIndex(URI, "/")
+		if lastSlash > 0 {
+			prefix := URI[lastSlash+1:]
+			postFix := URI[:lastSlash]
+
+			// check if expansion exists
+			if _, found := aContext.expansionToPrefixMappings[postFix]; found {
+				return prefix, nil
+			} else {
+				// generate new prefix
+				shortCode := fmt.Sprintf("ns%d", len(aContext.expansionToPrefixMappings))
+
+				// store prefix expansion mapping
+				aContext.StorePrefixExpansionMapping(shortCode, prefix)
+			}
+		}
+	}
+	return "", errors.New("unable to assert prefix from URI: " + URI)
 }
 
 func (aContext *NamespaceContext) GetNamespaceExpansionForPrefix(prefix string) (string, error) {

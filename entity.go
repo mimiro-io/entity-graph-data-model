@@ -11,6 +11,13 @@ type Entity struct {
 	Properties map[string]interface{} `json:"props"`
 }
 
+func NewEntity() *Entity {
+	e := &Entity{}
+	e.References = make(map[string]interface{})
+	e.Properties = make(map[string]interface{})
+	return e
+}
+
 func (anEntity *Entity) GetFirstReferenceValue(typeURI string) (string, error) {
 	if values, found := anEntity.GetReferenceValues(typeURI); found == nil {
 		if len(values) == 0 {
