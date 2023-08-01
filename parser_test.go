@@ -24,7 +24,7 @@ func TestParseValidSimpleEntity(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
@@ -57,7 +57,7 @@ func TestParseMissingNamespaceContext(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	_, err := parser.LoadEntityCollection(byteReader)
 
 	if err == nil {
@@ -85,7 +85,7 @@ func TestParseMissingNamespaceMappings(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	_, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
@@ -112,7 +112,7 @@ func TestParseBadExpansionWithMissingHashOrSlash(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	_, err := parser.LoadEntityCollection(byteReader)
 
 	if err == nil {
@@ -140,7 +140,7 @@ func TestParseBadJSONForContextDefinition(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	_, err := parser.LoadEntityCollection(byteReader)
 
 	if err == nil {
@@ -168,7 +168,7 @@ func TestParseInvalidJSONMissingComma(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	_, err := parser.LoadEntityCollection(byteReader)
 
 	if err == nil {
@@ -199,7 +199,7 @@ func TestParseWithNamespaceExpansionInPropName(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
@@ -238,7 +238,7 @@ func TestParseWithNamespaceExpansionInId(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
@@ -282,7 +282,7 @@ func TestParseWithNamespaceExpansionInIRefs(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
@@ -336,7 +336,7 @@ func TestParseWithRefArray(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
@@ -399,7 +399,7 @@ func TestParseWithEmbeddedAnonymousEntity(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
@@ -452,7 +452,7 @@ func TestParseWithEmbeddedEntityWithIdentity(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
@@ -522,7 +522,7 @@ func TestParseWithEmbeddedEntityArray(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
@@ -635,7 +635,7 @@ func TestParseRoundTripEntityCollection(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 	if err != nil {
 		t.Errorf("Error parsing entity collection: %s", err)
@@ -649,7 +649,7 @@ func TestParseRoundTripEntityCollection(t *testing.T) {
 	}
 
 	// and parse it back into a new entity collection
-	parser = NewEntityParser(nsManager, true)
+	parser = NewEntityParser(nsManager, true, true, false)
 
 	byteReader = bytes.NewReader(bytesBuffer.Bytes())
 	entityCollection, err = parser.LoadEntityCollection(byteReader)
@@ -762,7 +762,7 @@ func TestToJSONLDWithEmbeddedEntityArray(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager, true)
+	parser := NewEntityParser(nsManager, true, true, false)
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
