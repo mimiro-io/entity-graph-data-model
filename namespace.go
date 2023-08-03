@@ -9,4 +9,5 @@ type NamespaceManager interface {
 	GetPrefixedIdentifier(value string) (string, error)
 	GetNamespaceMappings() map[string]string
 	AssertPrefixFromURI(URI string) (string, error)
+	AsContext() *Context
 }
