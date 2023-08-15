@@ -773,3 +773,194 @@ func TestToJSONLDWithEmbeddedEntityArray(t *testing.T) {
 	bytesBuffer := bytes.Buffer{}
 	entityCollection.WriteJSON_LD(&bytesBuffer)
 }
+
+func TestParseWithDefaultNamespaceExpansionInPropName(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "@context", 
+				"namespaces": {
+					"_": "http://example.com/"
+				}
+			},
+			{
+				"id" : "http://example.com/1",
+				"props": {
+					"name": "John Smith"
+				}
+			}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager).WithExpandURIs()
+	entityCollection, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+	if len(entityCollection.Entities) != 1 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "http://example.com/1" {
+		t.Errorf("Expected entity id to be http://example.com/1, got %s", entityCollection.Entities[0].ID)
+	}
+	if len(entityCollection.Entities[0].Properties) != 1 {
+		t.Errorf("Expected entity properties to have 1 property, got %d", len(entityCollection.Entities[0].Properties))
+	}
+	if entityCollection.Entities[0].Properties["http://example.com/name"] != "John Smith" {
+		t.Errorf("Expected entity property name to be John Smith, got %s", entityCollection.Entities[0].Properties["name"])
+	}
+}
+
+func TestParseWithDefaultNamespaceExpansionInRefs(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "@context", 
+				"namespaces": {
+					"_": "http://example.com/",
+					"rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+				}
+			},
+			{
+				"id" : "1",
+				"props": {
+					"http://example.com/name": "John Smith"
+				},
+				"refs": {
+					"parent": "2",
+					"rdf:type": "Person"
+				}
+			}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager).WithExpandURIs()
+	entityCollection, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+	if len(entityCollection.Entities) != 1 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "http://example.com/1" {
+		t.Errorf("Expected entity id to be http://example.com/1, got %s", entityCollection.Entities[0].ID)
+	}
+	if len(entityCollection.Entities[0].Properties) != 1 {
+		t.Errorf("Expected entity properties to have 1 property, got %d", len(entityCollection.Entities[0].Properties))
+	}
+	if entityCollection.Entities[0].Properties["http://example.com/name"] != "John Smith" {
+		t.Errorf("Expected entity property name to be John Smith, got %s", entityCollection.Entities[0].Properties["name"])
+	}
+	if len(entityCollection.Entities[0].References) != 2 {
+		t.Errorf("Expected entity references to have 2 properties, got %d", len(entityCollection.Entities[0].References))
+	}
+	if entityCollection.Entities[0].References["http://example.com/parent"] != "http://example.com/2" {
+		t.Errorf("Expected entity reference parent to be http://example.com/2, got %s", entityCollection.Entities[0].References["parent"])
+	}
+	if entityCollection.Entities[0].References["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"] != "http://example.com/Person" {
+		t.Errorf("Expected entity reference type to be http://example.com/Person, got %s", entityCollection.Entities[0].References["type"])
+	}
+
+}
+
+func TestParseWithoutContext(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "http://example.com/1",
+				"props": {
+					"http://example.com/name": "John Smith"
+				},
+				"refs": {
+					"http://example.com/parent": "http://example.com/2"
+				}
+			}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager).WithNoContext().WithExpandURIs()
+	entityCollection, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+	if len(entityCollection.Entities) != 1 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "http://example.com/1" {
+		t.Errorf("Expected entity id to be http://example.com/1, got %s", entityCollection.Entities[0].ID)
+	}
+	if len(entityCollection.Entities[0].Properties) != 1 {
+		t.Errorf("Expected entity properties to have 1 property, got %d", len(entityCollection.Entities[0].Properties))
+	}
+	if entityCollection.Entities[0].Properties["http://example.com/name"] != "John Smith" {
+		t.Errorf("Expected entity property name to be John Smith, got %s", entityCollection.Entities[0].Properties["name"])
+	}
+	if len(entityCollection.Entities[0].References) != 1 {
+		t.Errorf("Expected entity references to have 2 properties, got %d", len(entityCollection.Entities[0].References))
+	}
+	if entityCollection.Entities[0].References["http://example.com/parent"] != "http://example.com/2" {
+		t.Errorf("Expected entity reference parent to be http://example.com/2, got %s", entityCollection.Entities[0].References["parent"])
+	}
+}
+
+func TestParseCompressURIs(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "http://example.com/1",
+				"props": {
+					"http://example.com/name": "John Smith"
+				},
+				"refs": {
+					"http://example.com/parent": "http://example.com/2",
+					"http://www.w3.org/1999/02/22-rdf-syntax-ns#type" : "http://example.com/Person" 
+				}
+			}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager).WithNoContext().WithCompressURIs()
+	entityCollection, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+	if len(entityCollection.Entities) != 1 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "ns0:1" {
+		t.Errorf("Expected entity id to be ns0:1, got %s", entityCollection.Entities[0].ID)
+	}
+	if len(entityCollection.Entities[0].Properties) != 1 {
+		t.Errorf("Expected entity properties to have 1 property, got %d", len(entityCollection.Entities[0].Properties))
+	}
+	if entityCollection.Entities[0].Properties["ns0:name"] != "John Smith" {
+		t.Errorf("Expected entity property name to be John Smith, got %s", entityCollection.Entities[0].Properties["name"])
+	}
+	if len(entityCollection.Entities[0].References) != 2 {
+		t.Errorf("Expected entity references to have 2 properties, got %d", len(entityCollection.Entities[0].References))
+	}
+	if entityCollection.Entities[0].References["ns0:parent"] != "ns0:2" {
+		t.Errorf("Expected entity reference parent to be http://example.com/2, got %s", entityCollection.Entities[0].References["parent"])
+	}
+
+	// check that the context is correct
+	context := entityCollection.NamespaceManager.AsContext()
+	if len(context.Namespaces) != 2 {
+		t.Errorf("Expected context to have 1 namespace, got %d", len(context.Namespaces))
+	}
+	if context.Namespaces["ns0"] != "http://example.com/" {
+		t.Errorf("Expected context namespace ns0 to be http://example.com/, got %s", context.Namespaces["ns0"])
+	}
+	if context.Namespaces["ns1"] != "http://www.w3.org/1999/02/22-rdf-syntax-ns#" {
+		t.Errorf("Expected context namespace ns1 to be http://www.w3.org/1999/02/22-rdf-syntax-ns#, got %s", context.Namespaces["ns1"])
+	}
+
+}

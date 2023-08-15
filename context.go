@@ -18,40 +18,48 @@ type NamespaceContext struct {
 	expansionToPrefixMappings map[string]string
 }
 
+func (aContext *NamespaceContext) AsContext() *Context {
+	context := NewContext()
+	for prefix, expansion := range aContext.prefixToExpansionMappings {
+		context.Namespaces[prefix] = expansion
+	}
+	return context
+}
+
 func (aContext *NamespaceContext) AssertPrefixFromURI(URI string) (string, error) {
 	// find last hash or slash
 	lastHash := strings.LastIndex(URI, "#")
 	if lastHash > 0 {
-		prefix := URI[lastHash+1:]
-		postFix := URI[:lastHash]
+		postfix := URI[lastHash+1:]
+		expansion := URI[:lastHash+1]
 
 		// check if expansion exists
-		if _, found := aContext.expansionToPrefixMappings[postFix]; found {
-			return prefix + ":" + postFix, nil
+		if prefix, found := aContext.expansionToPrefixMappings[expansion]; found {
+			return prefix + ":" + postfix, nil
 		} else {
 			// generate new prefix
 			shortCode := fmt.Sprintf("ns%d", len(aContext.expansionToPrefixMappings))
 			// store prefix expansion mapping
-			aContext.StorePrefixExpansionMapping(shortCode, prefix)
+			aContext.StorePrefixExpansionMapping(shortCode, expansion)
 
-			return shortCode + ":" + postFix, nil
+			return shortCode + ":" + postfix, nil
 		}
 	} else {
 		lastSlash := strings.LastIndex(URI, "/")
 		if lastSlash > 0 {
-			prefix := URI[lastSlash+1:]
-			postFix := URI[:lastSlash]
+			postfix := URI[lastSlash+1:]
+			expansion := URI[:lastSlash+1]
 
 			// check if expansion exists
-			if _, found := aContext.expansionToPrefixMappings[postFix]; found {
-				return prefix + ":" + postFix, nil
+			if prefix, found := aContext.expansionToPrefixMappings[expansion]; found {
+				return prefix + ":" + postfix, nil
 			} else {
 				// generate new prefix
 				shortCode := fmt.Sprintf("ns%d", len(aContext.expansionToPrefixMappings))
 
 				// store prefix expansion mapping
-				aContext.StorePrefixExpansionMapping(shortCode, prefix)
-				return shortCode + ":" + postFix, nil
+				aContext.StorePrefixExpansionMapping(shortCode, expansion)
+				return shortCode + ":" + postfix, nil
 			}
 		}
 	}

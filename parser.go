@@ -41,7 +41,7 @@ func (esp *EntityParser) WithExpandURIs() *EntityParser {
 }
 
 func (esp *EntityParser) WithCompressURIs() *EntityParser {
-	esp.expandURIs = true
+	esp.compressURIs = true
 	return esp
 }
 
