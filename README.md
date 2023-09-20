@@ -29,6 +29,7 @@ func main() {
     entityJson, _ := json.Marshall(entity)
     fmt.Print(entityJson)
 }
+´´´
 
 # Parsing Entity Graph Data Model JSON
 
@@ -68,5 +69,4 @@ func main() {
 	parser := NewEntityParser(nsManager).WithExpandURIs()
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 }
-
 ´´´
