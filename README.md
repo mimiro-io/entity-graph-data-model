@@ -11,7 +11,7 @@ To use the module import the following:
 
 The following example shows how to create an Entity, add a property, reference and serialise it to JSON. 
 
-´´´ go
+``` go
 package main
 
 import ( 
@@ -29,13 +29,13 @@ func main() {
     entityJson, _ := json.Marshall(entity)
     fmt.Print(entityJson)
 }
-´´´
+```
 
 # Parsing Entity Graph Data Model JSON
 
 The module can be used to parse entity graph data model JSON data. 
 
-´´´ go
+``` go
 package main
 
 import ( 
@@ -69,4 +69,4 @@ func main() {
 	parser := NewEntityParser(nsManager).WithExpandURIs()
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 }
-´´´
+```
