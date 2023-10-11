@@ -5,7 +5,7 @@ Data structures, parser and utilities for the entity graph data model
 
 To use the module import the following:
 
-`github.com/mimiro.io/entity-graph-data-model`
+`github.com/mimiro-io/entity-graph-data-model`
 
 # Core Entity Graph Data Model structures
 
@@ -16,7 +16,7 @@ package main
 
 import ( 
     "fmt"
-    egdm "github.com/mimiro.io/entity-graph-data-model"
+    egdm "github.com/mimiro-io/entity-graph-data-model"
     "encoding/json"
 )
 
@@ -40,7 +40,7 @@ package main
 
 import ( 
     "fmt"
-    "github.com/mimiro.io/entity-graph-data-model"
+    "github.com/mimiro-io/entity-graph-data-model"
 )
 
 func main() {
