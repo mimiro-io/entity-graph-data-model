@@ -103,6 +103,9 @@ func (esp *EntityParser) Parse(reader io.Reader, emitEntity func(*Entity) error,
 
 	// decode context object
 	if esp.requireContext {
+		if esp.nsManager == nil {
+			return errors.New("parsing error: Namespace manager required when parsing with context")
+		}
 		context := make(map[string]any)
 		err = decoder.Decode(&context)
 		if err != nil {
@@ -122,6 +125,11 @@ func (esp *EntityParser) Parse(reader io.Reader, emitEntity func(*Entity) error,
 			}
 		} else {
 			return errors.New("first object in array must be a context with id @context")
+		}
+
+		// if a callback func for the parsed context is registered we call it
+		if esp.contextParsedCallback != nil {
+			esp.contextParsedCallback(esp.nsManager.AsContext())
 		}
 	}
 
