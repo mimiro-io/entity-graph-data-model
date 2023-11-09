@@ -5,6 +5,18 @@ import (
 	"testing"
 )
 
+func TestAddEntityToEntityCollection(t *testing.T) {
+	ec := NewEntityCollection(nil)
+	entity := NewEntity().SetID("ns0:entity1")
+	err := ec.AddEntity(entity)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(ec.Entities) != 1 {
+		t.Errorf("expected entity collection to have 1 entity, got %d", len(ec.Entities))
+	}
+}
+
 func TestCreateEntity(t *testing.T) {
 	// create a new entity
 	entity := NewEntity().SetID("ns0:entity1")
