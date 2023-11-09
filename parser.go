@@ -15,10 +15,11 @@ type Parser interface {
 }
 
 type EntityParser struct {
-	nsManager      NamespaceManager
-	expandURIs     bool
-	compressURIs   bool
-	requireContext bool
+	nsManager             NamespaceManager
+	expandURIs            bool
+	compressURIs          bool
+	requireContext        bool
+	contextParsedCallback func(*Context)
 }
 
 func NewEntityParser(nsmanager NamespaceManager) *EntityParser {
@@ -42,6 +43,11 @@ func (esp *EntityParser) WithExpandURIs() *EntityParser {
 
 func (esp *EntityParser) WithCompressURIs() *EntityParser {
 	esp.compressURIs = true
+	return esp
+}
+
+func (esp *EntityParser) WithParsedContextCallback(callback func(context *Context)) *EntityParser {
+	esp.contextParsedCallback = callback
 	return esp
 }
 
