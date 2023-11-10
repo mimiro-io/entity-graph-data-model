@@ -3,19 +3,34 @@ package egdm
 import "errors"
 
 type Entity struct {
-	ID         string                 `json:"id,omitempty"`
-	InternalID uint64                 `json:"internalId,omitempty"`
-	Recorded   uint64                 `json:"recorded,omitempty"`
-	IsDeleted  bool                   `json:"deleted,omitempty"`
-	References map[string]interface{} `json:"refs"`
-	Properties map[string]interface{} `json:"props"`
+	ID         string         `json:"id,omitempty"`
+	InternalID uint64         `json:"internalId,omitempty"`
+	Recorded   uint64         `json:"recorded,omitempty"`
+	IsDeleted  bool           `json:"deleted,omitempty"`
+	References map[string]any `json:"refs"`
+	Properties map[string]any `json:"props"`
 }
 
 func NewEntity() *Entity {
 	e := &Entity{}
-	e.References = make(map[string]interface{})
-	e.Properties = make(map[string]interface{})
+	e.References = make(map[string]any)
+	e.Properties = make(map[string]any)
 	return e
+}
+
+func (anEntity *Entity) SetID(id string) *Entity {
+	anEntity.ID = id
+	return anEntity
+}
+
+func (anEntity *Entity) SetProperty(property string, value any) *Entity {
+	anEntity.Properties[property] = value
+	return anEntity
+}
+
+func (anEntity *Entity) SetReference(reference string, value any) *Entity {
+	anEntity.References[reference] = value
+	return anEntity
 }
 
 func (anEntity *Entity) GetFirstReferenceValue(typeURI string) (string, error) {

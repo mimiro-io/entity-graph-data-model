@@ -14,7 +14,12 @@ type EntityCollection struct {
 
 func NewEntityCollection(nsManager NamespaceManager) *EntityCollection {
 	ec := &EntityCollection{}
+	// default to inbuilt namespace manager if not defined
+	if nsManager == nil {
+		nsManager = NewNamespaceContext()
+	}
 	ec.NamespaceManager = nsManager
+	ec.Entities = make([]*Entity, 0)
 	return ec
 }
 
