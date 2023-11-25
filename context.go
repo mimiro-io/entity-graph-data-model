@@ -26,7 +26,7 @@ func (aContext *NamespaceContext) AsContext() *Context {
 	return context
 }
 
-func (aContext *NamespaceContext) AssertPrefixFromURI(URI string) (string, error) {
+func (aContext *NamespaceContext) AssertPrefixedIdentifierFromURI(URI string) (string, error) {
 	// find last hash or slash
 	lastHash := strings.LastIndex(URI, "#")
 	if lastHash > 0 {

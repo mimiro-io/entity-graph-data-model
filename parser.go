@@ -74,7 +74,7 @@ func (esp *EntityParser) GetIdentityValue(value string) (string, error) {
 	var err error
 
 	if esp.compressURIs {
-		identity, err = esp.nsManager.AssertPrefixFromURI(value)
+		identity, err = esp.nsManager.AssertPrefixedIdentifierFromURI(value)
 		if err != nil {
 			return "", err
 		}
