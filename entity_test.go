@@ -46,19 +46,26 @@ func TestCreateEntity(t *testing.T) {
 	}
 }
 
+func TestAssertIdentifierReturnsErrorWhenMissingPostfix(t *testing.T) {
+	// namespace manager
+	nsManager := NewNamespaceContext()
+	_, err := nsManager.AssertPrefixedIdentifierFromURI("http://data.example.com/things/")
+	if err == nil {
+		t.Error(err)
+	}
+}
+
 func TestCreateEntityUsingContextManager(t *testing.T) {
 	// namespace manager
 	nsManager := NewNamespaceContext()
-	ns1, err := nsManager.AssertPrefixedIdentifierFromURI("http://data.example.com/things/")
+	entityId, err := nsManager.AssertPrefixedIdentifierFromURI("http://data.example.com/things/entity1")
 	if err != nil {
 		t.Error(err)
 	}
 
-	// create a new entity
-	entityId := ns1 + ":entity1"
 	entity := NewEntity().SetID(entityId)
-	if entity.ID != entityId {
-		t.Errorf("expected entity id to be '%s:entity1', got '%s'", ns1, entity.ID)
+	if entity.ID != "ns0:entity1" {
+		t.Errorf("expected entity id to be 'ns0:entity1', got '%s'", entity.ID)
 	}
 
 	// add a property

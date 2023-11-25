@@ -32,6 +32,9 @@ func (aContext *NamespaceContext) AssertPrefixedIdentifierFromURI(URI string) (s
 	if lastHash > 0 {
 		postfix := URI[lastHash+1:]
 		expansion := URI[:lastHash+1]
+		if postfix == "" {
+			return "", errors.New("unable to assert prefixed identifier from URI: " + URI + " - no postfix")
+		}
 
 		// check if expansion exists
 		if prefix, found := aContext.expansionToPrefixMappings[expansion]; found {
@@ -49,6 +52,9 @@ func (aContext *NamespaceContext) AssertPrefixedIdentifierFromURI(URI string) (s
 		if lastSlash > 0 {
 			postfix := URI[lastSlash+1:]
 			expansion := URI[:lastSlash+1]
+			if postfix == "" {
+				return "", errors.New("unable to assert prefixed identifier from URI: " + URI + " - no postfix")
+			}
 
 			// check if expansion exists
 			if prefix, found := aContext.expansionToPrefixMappings[expansion]; found {
