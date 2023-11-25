@@ -49,7 +49,7 @@ func TestCreateEntity(t *testing.T) {
 func TestCreateEntityUsingContextManager(t *testing.T) {
 	// namespace manager
 	nsManager := NewNamespaceContext()
-	ns1, err := nsManager.AssertPrefixFromURI("http://data.example.com/things/")
+	ns1, err := nsManager.AssertPrefixedIdentifierFromURI("http://data.example.com/things/")
 	if err != nil {
 		t.Error(err)
 	}
