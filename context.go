@@ -102,10 +102,10 @@ func (aContext *NamespaceContext) isCURIE(value string) (bool, string, string) {
 		return false, "", ""
 	} else {
 		parts := strings.Split(value, ":")
-		if len(parts) != 2 {
+		if len(parts) < 2 {
 			return false, "", ""
 		}
-		return true, parts[0], parts[1]
+		return true, parts[0], value[len(parts[0])+1:]
 	}
 }
 

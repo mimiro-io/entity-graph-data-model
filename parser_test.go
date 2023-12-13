@@ -258,6 +258,45 @@ func TestParseWithNamespaceExpansionInId(t *testing.T) {
 	}
 }
 
+func TestParseWithNamespaceExpansionInIdAndExtraColonInId(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "@context", 
+				"namespaces": {
+					"ex": "http://example.com/"
+				}
+			},
+			{
+				"id" : "ex:my:1",
+				"props": {
+					"http://example.com/name": "John Smith"
+				}
+			}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager).WithExpandURIs()
+	entityCollection, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+	if len(entityCollection.Entities) != 1 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "http://example.com/my:1" {
+		t.Errorf("Expected entity id to be http://example.com/1, got %s", entityCollection.Entities[0].ID)
+	}
+	if len(entityCollection.Entities[0].Properties) != 1 {
+		t.Errorf("Expected entity properties to have 1 property, got %d", len(entityCollection.Entities[0].Properties))
+	}
+	if entityCollection.Entities[0].Properties["http://example.com/name"] != "John Smith" {
+		t.Errorf("Expected entity property name to be John Smith, got %s", entityCollection.Entities[0].Properties["name"])
+	}
+}
+
 func TestParseWithNamespaceExpansionInIRefs(t *testing.T) {
 
 	byteReader := bytes.NewReader([]byte(`
@@ -330,7 +369,7 @@ func TestParseWithRefArray(t *testing.T) {
 				},
 				"refs": {
 					"http://example.com/parent": "ex:2",
-					"rdf:type": [ "ex:Person", "ex:Employee" ]
+					"rdf:type": [ "ex:Person", "ex:Employee", "ex:my:valid_char-s" ]
 				}
 			}
 		]`))
@@ -363,8 +402,8 @@ func TestParseWithRefArray(t *testing.T) {
 
 	refTypes := entityCollection.Entities[0].References["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"].([]string)
 
-	if len(refTypes) != 2 {
-		t.Errorf("Expected entity reference type to be array of 2, got %d", len(refTypes))
+	if len(refTypes) != 3 {
+		t.Errorf("Expected entity reference type to be array of 3, got %d", len(refTypes))
 	}
 	// check elements of array
 	if refTypes[0] != "http://example.com/Person" {
@@ -372,6 +411,9 @@ func TestParseWithRefArray(t *testing.T) {
 	}
 	if refTypes[1] != "http://example.com/Employee" {
 		t.Errorf("Expected entity reference type to be http://example.com/Employee, got %s", refTypes[1])
+	}
+	if refTypes[2] != "http://example.com/my:valid_char-s" {
+		t.Errorf("Expected entity reference type to be http://example.com/my:valid_char-s, got %s", refTypes[1])
 	}
 }
 
