@@ -124,6 +124,53 @@ func TestParseBadExpansionWithMissingHashOrSlash(t *testing.T) {
 	}
 }
 
+func TestAllowsBadExpansionWithMissingHashOrSlashAndLenientModeOn(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "@context",
+				"namespaces": {
+					"ex": "http://example.com"
+				}
+			},
+			{
+				"id": "ex:1",
+				"props": {
+					"http://example.com/name": "John Smith"
+				}
+			}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager).WithExpandURIs().WithLenientNamespaceChecks()
+	_, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Errorf("Expected no error due to bad context definition")
+	}
+
+	// lookup the namespace
+	exp, err := nsManager.GetNamespaceExpansionForPrefix("ex")
+	if err != nil {
+		t.Errorf("Expected no error looking up namespace")
+	}
+
+	if exp != "http://example.com" {
+		t.Errorf("Expected namespace expansion to be http://example.com, got %s", exp)
+	}
+
+	// check that when that namespace is used, it is expanded
+	pfx, err := nsManager.AssertPrefixedIdentifierFromURI("http://example.com/1")
+	if err != nil {
+		t.Errorf("Expected no error looking up namespace")
+	}
+
+	if pfx != "ns1:1" {
+		t.Errorf("Expected namespace expansion to be ex:1, got %s", pfx)
+	}
+}
+
 func TestParseBadJSONForContextDefinition(t *testing.T) {
 
 	byteReader := bytes.NewReader([]byte(`

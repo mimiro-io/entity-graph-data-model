@@ -19,6 +19,7 @@ type EntityParser struct {
 	expandURIs            bool
 	compressURIs          bool
 	requireContext        bool
+	lenientNamespaceCheck bool
 	contextParsedCallback func(*Context)
 }
 
@@ -29,6 +30,11 @@ func NewEntityParser(nsmanager NamespaceManager) *EntityParser {
 	ep.compressURIs = false
 	ep.requireContext = true
 	return ep
+}
+
+func (esp *EntityParser) WithLenientNamespaceChecks() *EntityParser {
+	esp.lenientNamespaceCheck = true
+	return esp
 }
 
 func (esp *EntityParser) WithNoContext() *EntityParser {
@@ -116,7 +122,7 @@ func (esp *EntityParser) Parse(reader io.Reader, emitEntity func(*Entity) error,
 			if context["namespaces"] != nil {
 				for k, v := range context["namespaces"].(map[string]any) {
 					expansion := v.(string)
-					if strings.HasSuffix(expansion, "/") || strings.HasSuffix(expansion, "#") {
+					if esp.lenientNamespaceCheck || strings.HasSuffix(expansion, "/") || strings.HasSuffix(expansion, "#") {
 						esp.nsManager.StorePrefixExpansionMapping(k, v.(string))
 					} else {
 						return fmt.Errorf("expansion %s for prefix %s must end with / or #", expansion, k)
