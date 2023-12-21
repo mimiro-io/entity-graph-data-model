@@ -2,6 +2,7 @@ package egdm
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 )
 
@@ -125,4 +126,85 @@ func (ec *EntityCollection) WriteEntityGraphJSON(writer io.Writer) error {
 func (ec *EntityCollection) WriteJSON_LD(writer io.Writer) error {
 	jsonLDWriter := &JsonLDWriter{}
 	return jsonLDWriter.Write(ec, writer)
+}
+
+func (ec *EntityCollection) ExpandNamespacePrefixes() error {
+	var err error
+	for _, entity := range ec.Entities {
+		err = ec.expandEntityNamespaces(entity)
+		if err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
+	// expand id
+	fullID, err := ec.NamespaceManager.GetFullURI(entity.ID)
+	if err != nil {
+		return err
+	}
+	entity.ID = fullID
+
+	// expand property types
+	for typeURI, propertyValue := range entity.Properties {
+		fullType, err := ec.NamespaceManager.GetFullURI(typeURI)
+		if err != nil {
+			return err
+		}
+		// remove old key
+		delete(entity.Properties, typeURI)
+
+		// add new key and value
+		entity.Properties[fullType] = propertyValue
+	}
+
+	// expand ref types and values
+	for typeURI, refValues := range entity.References {
+		fullType, err := ec.NamespaceManager.GetFullURI(typeURI)
+		if err != nil {
+			return err
+		}
+
+		// get updated values
+		values, err := ec.expandRefValues(refValues)
+		if err != nil {
+			return err
+		}
+
+		// remove old key
+		delete(entity.References, typeURI)
+
+		// add new key and value
+		entity.References[fullType] = values
+	}
+
+	return nil
+}
+
+func (ec *EntityCollection) expandRefValues(values any) (any, error) {
+	// switch if string or []string
+	switch values.(type) {
+	case string:
+		// expand ref value
+		fullRefValue, err := ec.NamespaceManager.GetFullURI(values.(string))
+		if err != nil {
+			return nil, err
+		}
+		return fullRefValue, nil
+	case []string:
+		// expand ref values
+		for i, refValue := range values.([]string) {
+			fullRefValue, err := ec.NamespaceManager.GetFullURI(refValue)
+			if err != nil {
+				return nil, err
+			}
+			values.([]string)[i] = fullRefValue
+		}
+		return values, nil
+	}
+
+	return nil, errors.New("unexpected type in refs")
 }

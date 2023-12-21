@@ -17,6 +17,84 @@ func TestAddEntityToEntityCollection(t *testing.T) {
 	}
 }
 
+func TestExpandPrefixes(t *testing.T) {
+	// namespace manager
+	nsManager := NewNamespaceContext()
+	nsManager.StorePrefixExpansionMapping("ns0", "http://data.example.com/things/")
+	// create entity using short form
+	entity := NewEntity().SetID("ns0:entity1")
+
+	// add some properties and references
+	entity.SetProperty("ns0:property1", "value1")
+	entity.SetReference("ns0:reference1", "ns0:entity2")
+	// and some refs in a list
+	entity.SetReference("ns0:reference2", []string{"ns0:entity3", "ns0:entity4"})
+
+	// create entity collection and add entity
+	ec := NewEntityCollection(nsManager)
+	err := ec.AddEntity(entity)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// expand prefixes
+	err = ec.ExpandNamespacePrefixes()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// check that the entity id has been expanded
+	if entity.ID != "http://data.example.com/things/entity1" {
+		t.Errorf("expected entity id to be 'http://data.example.com/things/entity1', got '%s'", entity.ID)
+	}
+
+	// check that the property has been expanded
+	if entity.Properties["http://data.example.com/things/property1"] != "value1" {
+		t.Errorf("expected entity property to be 'value1', got '%s'", entity.Properties["http://data.example.com/things/property1"])
+	}
+
+	// check that the reference has been expanded
+	if entity.References["http://data.example.com/things/reference1"] != "http://data.example.com/things/entity2" {
+		t.Errorf("expected entity reference to be 'http://data.example.com/things/entity2', got '%s'", entity.References["http://data.example.com/things/reference1"])
+	}
+
+	// check that the reference list has been expanded
+	if entity.References["http://data.example.com/things/reference2"].([]string)[0] != "http://data.example.com/things/entity3" {
+		t.Errorf("expected entity reference to be 'http://data.example.com/things/entity3', got '%s'", entity.References["http://data.example.com/things/reference2"].([]string)[0])
+	}
+}
+
+func TestExpandPrefixesWithMissingExpansion(t *testing.T) {
+	// namespace manager
+	nsManager := NewNamespaceContext()
+	nsManager.StorePrefixExpansionMapping("ns0", "http://data.example.com/things/")
+	// create entity using short form
+	entity := NewEntity().SetID("ns0:entity1")
+
+	// add some properties and references
+	entity.SetProperty("ns0:property1", "value1")
+	entity.SetReference("ns0:reference1", "ns0:entity2")
+	// and some refs in a list
+	entity.SetReference("ns0:reference2", []string{"ns0:entity3", "ns0:entity4"})
+	// add a reference with a missing expansion
+	entity.SetReference("ns0:reference3", "ns1:entity5")
+
+	// create entity collection and add entity
+	ec := NewEntityCollection(nsManager)
+	err := ec.AddEntity(entity)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// expand prefixes
+	err = ec.ExpandNamespacePrefixes()
+
+	// expecting an error
+	if err == nil {
+		t.Error("expected error")
+	}
+}
+
 func TestCreateEntity(t *testing.T) {
 	// create a new entity
 	entity := NewEntity().SetID("ns0:entity1")
