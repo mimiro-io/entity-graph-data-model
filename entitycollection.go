@@ -131,7 +131,7 @@ func (ec *EntityCollection) WriteJSON_LD(writer io.Writer) error {
 func (ec *EntityCollection) ExpandNamespacePrefixes() error {
 	var err error
 	for _, entity := range ec.Entities {
-		err = ec.expandEntityNamespaces(entity, ec.NamespaceManager)
+		err = ec.expandEntityNamespaces(entity)
 		if err != nil {
 			return err
 		}
@@ -140,9 +140,9 @@ func (ec *EntityCollection) ExpandNamespacePrefixes() error {
 	return err
 }
 
-func (ec *EntityCollection) expandEntityNamespaces(entity *Entity, namespaceManager NamespaceManager) error {
+func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
 	// expand id
-	fullID, err := namespaceManager.GetFullURI(entity.ID)
+	fullID, err := ec.NamespaceManager.GetFullURI(entity.ID)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity, namespaceMana
 
 	// expand property types
 	for typeURI, propertyValue := range entity.Properties {
-		fullType, err := namespaceManager.GetFullURI(typeURI)
+		fullType, err := ec.NamespaceManager.GetFullURI(typeURI)
 		if err != nil {
 			return err
 		}
@@ -163,13 +163,13 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity, namespaceMana
 
 	// expand ref types and values
 	for typeURI, refValues := range entity.References {
-		fullType, err := namespaceManager.GetFullURI(typeURI)
+		fullType, err := ec.NamespaceManager.GetFullURI(typeURI)
 		if err != nil {
 			return err
 		}
 
 		// get updated values
-		values, err := ec.expandRefValues(refValues, namespaceManager)
+		values, err := ec.expandRefValues(refValues)
 		if err != nil {
 			return err
 		}
@@ -184,12 +184,12 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity, namespaceMana
 	return nil
 }
 
-func (ec *EntityCollection) expandRefValues(values any, namespaceManage NamespaceManager) (any, error) {
+func (ec *EntityCollection) expandRefValues(values any) (any, error) {
 	// switch if string or []string
 	switch values.(type) {
 	case string:
 		// expand ref value
-		fullRefValue, err := namespaceManage.GetFullURI(values.(string))
+		fullRefValue, err := ec.NamespaceManager.GetFullURI(values.(string))
 		if err != nil {
 			return nil, err
 		}
@@ -197,7 +197,7 @@ func (ec *EntityCollection) expandRefValues(values any, namespaceManage Namespac
 	case []string:
 		// expand ref values
 		for i, refValue := range values.([]string) {
-			fullRefValue, err := namespaceManage.GetFullURI(refValue)
+			fullRefValue, err := ec.NamespaceManager.GetFullURI(refValue)
 			if err != nil {
 				return nil, err
 			}
