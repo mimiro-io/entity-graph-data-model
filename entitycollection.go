@@ -35,6 +35,45 @@ func (ec *EntityCollection) AddEntity(entity *Entity) error {
 	return nil
 }
 
+func (ec *EntityCollection) AddEntityFromMap(data map[string]any) error {
+	entity := NewEntity()
+
+	// get metadata
+	if id, found := data["id"]; found {
+		entity.ID = id.(string)
+	}
+
+	if isDeleted, found := data["deleted"]; found {
+		entity.IsDeleted = isDeleted.(bool)
+	}
+
+	if recorded, found := data["recorded"]; found {
+		entity.Recorded = uint64(recorded.(float64))
+	}
+
+	// get props
+	if props, found := data["props"]; found {
+		for key, value := range props.(map[string]any) {
+			entity.Properties[key] = value
+		}
+	}
+
+	// get refs
+	if refs, found := data["refs"]; found {
+		for key, value := range refs.(map[string]any) {
+			entity.References[key] = value
+		}
+	}
+
+	// add entity to collection
+	err := ec.AddEntity(entity)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (ec *EntityCollection) GetEntities() []*Entity {
 	return ec.Entities
 }
