@@ -124,6 +124,59 @@ func TestCreateEntity(t *testing.T) {
 	}
 }
 
+func TestCreateEntityFromMap(t *testing.T) {
+	// define map with id, props and refs
+	data := make(map[string]any)
+	data["id"] = "ns0:entity1"
+	data["props"] = make(map[string]any)
+	data["props"].(map[string]any)["ns0:property1"] = "value1"
+	data["refs"] = make(map[string]any)
+	data["refs"].(map[string]any)["ns0:reference1"] = "ns0:entity2"
+
+	// create a new entity collection
+	ec := NewEntityCollection(nil)
+	err := ec.AddEntityFromMap(data)
+
+	// check for error
+	if err != nil {
+		t.Error(err)
+	}
+
+	// check the entity id
+	if ec.Entities[0].ID != "ns0:entity1" {
+		t.Errorf("expected entity id to be 'ns0:entity1', got '%s'", ec.Entities[0].ID)
+	}
+
+	// check the entity property
+	if ec.Entities[0].Properties["ns0:property1"] != "value1" {
+		t.Errorf("expected entity property to be 'value1', got '%s'", ec.Entities[0].Properties["ns0:property1"])
+	}
+
+	// check the entity reference
+	if ec.Entities[0].References["ns0:reference1"] != "ns0:entity2" {
+		t.Errorf("expected entity reference to be 'ns0:entity2', got '%s'", ec.Entities[0].References["ns0:reference1"])
+	}
+}
+
+func TestCreateEntityFromMapWithWrongDataTypeForDeleted(t *testing.T) {
+	// define map with id, props and refs
+	data := make(map[string]any)
+	data["id"] = "ns0:entity1"
+	data["deleted"] = "true"
+
+	// create a new entity collection
+	ec := NewEntityCollection(nil)
+	err := ec.AddEntityFromMap(data)
+	if err != nil {
+		t.Error("unexpected error")
+	}
+
+	// check that deleted is false
+	if ec.Entities[0].IsDeleted != false {
+		t.Errorf("expected entity deleted to be false, got '%t'", ec.Entities[0].IsDeleted)
+	}
+}
+
 func TestAssertIdentifierReturnsErrorWhenMissingPostfix(t *testing.T) {
 	// namespace manager
 	nsManager := NewNamespaceContext()
