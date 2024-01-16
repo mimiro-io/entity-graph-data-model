@@ -158,6 +158,25 @@ func TestCreateEntityFromMap(t *testing.T) {
 	}
 }
 
+func TestCreateEntityFromMapWithWrongDataTypeForDeleted(t *testing.T) {
+	// define map with id, props and refs
+	data := make(map[string]any)
+	data["id"] = "ns0:entity1"
+	data["deleted"] = "true"
+
+	// create a new entity collection
+	ec := NewEntityCollection(nil)
+	err := ec.AddEntityFromMap(data)
+	if err != nil {
+		t.Error("unexpected error")
+	}
+
+	// check that deleted is false
+	if ec.Entities[0].IsDeleted != false {
+		t.Errorf("expected entity deleted to be false, got '%t'", ec.Entities[0].IsDeleted)
+	}
+}
+
 func TestAssertIdentifierReturnsErrorWhenMissingPostfix(t *testing.T) {
 	// namespace manager
 	nsManager := NewNamespaceContext()

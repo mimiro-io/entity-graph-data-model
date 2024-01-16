@@ -24,17 +24,30 @@ func NewEntityCollection(nsManager NamespaceManager) *EntityCollection {
 	return ec
 }
 
-// Set Continuation	Token
+// SetContinuationToken sets the continuation token on the EntityCollection
 func (ec *EntityCollection) SetContinuationToken(continuation *Continuation) {
 	ec.Continuation = continuation
 }
 
-// add entity to collection
+// AddEntity adds the given entity to the collection
 func (ec *EntityCollection) AddEntity(entity *Entity) error {
 	ec.Entities = append(ec.Entities, entity)
 	return nil
 }
 
+// AddEntityFromMap adds an entity to the collection from a map
+// The map should have the following structure (the keys are case sensitive):
+//
+//	{
+//	  "id": "ns0:entity1",
+//	  "deleted": false,
+//	  "recorded": 1234567890,
+//	  "props": {
+//	    "ns0:property1": "value1"
+//	  },
+//	  "refs": {
+//	    "ns0:reference1": "ns0:entity2"
+//	  }
 func (ec *EntityCollection) AddEntityFromMap(data map[string]any) error {
 	entity := NewEntity()
 
@@ -44,11 +57,20 @@ func (ec *EntityCollection) AddEntityFromMap(data map[string]any) error {
 	}
 
 	if isDeleted, found := data["deleted"]; found {
-		entity.IsDeleted = isDeleted.(bool)
+		// check type it bool
+		if _, ok := isDeleted.(bool); ok {
+			entity.IsDeleted = isDeleted.(bool)
+		}
 	}
 
 	if recorded, found := data["recorded"]; found {
-		entity.Recorded = uint64(recorded.(float64))
+		if _, ok := recorded.(float64); ok {
+			entity.Recorded = uint64(recorded.(float64))
+		}
+
+		if _, ok := recorded.(uint64); ok {
+			entity.Recorded = recorded.(uint64)
+		}
 	}
 
 	// get props
