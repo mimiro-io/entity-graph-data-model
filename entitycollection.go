@@ -265,6 +265,16 @@ func (ec *EntityCollection) expandRefValues(values any) (any, error) {
 			values.([]string)[i] = fullRefValue
 		}
 		return values, nil
+	case []any:
+		// expand ref values
+		for i, refValue := range values.([]any) {
+			fullRefValue, err := ec.NamespaceManager.GetFullURI(refValue.(string))
+			if err != nil {
+				return nil, err
+			}
+			values.([]any)[i] = fullRefValue
+		}
+		return values, nil
 	}
 
 	return nil, errors.New("unexpected type in refs")
