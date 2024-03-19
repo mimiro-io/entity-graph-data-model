@@ -813,6 +813,140 @@ func TestParseRoundTripEntityCollection(t *testing.T) {
 	}
 }
 
+func TestParseRoundTripEntityCollectionWithNoContextWritten(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id" : "@context", 
+				"namespaces": {
+					"ex": "http://example.com/",
+					"rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+				}
+			},
+			{
+				"id" : "ex:1",
+				"props": {
+					"http://example.com/addresses": 
+						[
+							{
+								"id": "ex:2",
+								"props": {
+									"http://example.com/street": "123 Main Street"
+								},
+								"refs": {
+									"http://example.com/country": "ex:5"
+								}
+							},
+							{
+								"id": "ex:3",
+								"props": {
+									"http://example.com/street": "125 Main Street"
+								},
+								"refs": {
+									"http://example.com/country": "ex:6"
+								}
+							}
+						]	
+				}
+			},
+			{
+				"id" : "@continuation",
+				"token" : "1234567890"	
+			}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager).WithExpandURIs()
+	entityCollection, err := parser.LoadEntityCollection(byteReader)
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+
+	// write it out again
+	bytesBuffer := bytes.Buffer{}
+	entityCollection.SetOmitContextOnWrite(true)
+	err = entityCollection.WriteEntityGraphJSON(&bytesBuffer)
+	if err != nil {
+		t.Errorf("Error writing entity collection: %s", err)
+	}
+
+	// and parse it back into a new entity collection
+	parser = NewEntityParser(nsManager).WithExpandURIs().WithNoContext()
+
+	byteReader = bytes.NewReader(bytesBuffer.Bytes())
+	entityCollection, err = parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+
+	if len(entityCollection.Entities) != 1 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "http://example.com/1" {
+		t.Errorf("Expected entity id to be http://example.com/1, got %s", entityCollection.Entities[0].ID)
+	}
+	if len(entityCollection.Entities[0].Properties) != 1 {
+		t.Errorf("Expected entity properties to have 1 property, got %d", len(entityCollection.Entities[0].Properties))
+	}
+	if len(entityCollection.Entities[0].References) != 0 {
+		t.Errorf("Expected entity references to have 0 properties, got %d", len(entityCollection.Entities[0].References))
+	}
+
+	embeddedEntityArrayAny := entityCollection.Entities[0].Properties["http://example.com/addresses"].([]any)
+	embeddedEntityArray := make([]*Entity, len(embeddedEntityArrayAny))
+	for i, v := range embeddedEntityArrayAny {
+		embeddedEntityArray[i] = v.(*Entity)
+	}
+
+	if len(embeddedEntityArray) != 2 {
+		t.Errorf("Expected embedded entity array to have 2 elements, got %d", len(embeddedEntityArray))
+	}
+
+	embeddedEntity := embeddedEntityArray[0]
+
+	if len(embeddedEntity.Properties) != 1 {
+		t.Errorf("Expected embedded entity properties to have 1 property, got %d", len(embeddedEntity.Properties))
+	}
+	if embeddedEntity.Properties["http://example.com/street"] != "123 Main Street" {
+		t.Errorf("Expected embedded entity property street to be 123 Main Street, got %s", embeddedEntity.Properties["http://example.com/street"])
+	}
+
+	if embeddedEntity.ID != "http://example.com/2" {
+		t.Errorf("Expected embedded entity id to be http://example.com/2, got %s", embeddedEntity.ID)
+	}
+
+	if len(embeddedEntity.References) != 1 {
+		t.Errorf("Expected embedded entity references to have 1 property, got %d", len(embeddedEntity.References))
+	}
+	if embeddedEntity.References["http://example.com/country"] != "http://example.com/5" {
+		t.Errorf("Expected embedded entity reference country to be http://example.com/5, got %s", embeddedEntity.References["http://example.com/country"])
+	}
+
+	embeddedEntity = embeddedEntityArray[1]
+
+	if len(embeddedEntity.Properties) != 1 {
+		t.Errorf("Expected embedded entity properties to have 1 property, got %d", len(embeddedEntity.Properties))
+	}
+	if embeddedEntity.Properties["http://example.com/street"] != "125 Main Street" {
+		t.Errorf("Expected embedded entity property street to be 125 Main Street, got %s", embeddedEntity.Properties["http://example.com/street"])
+	}
+	if embeddedEntity.ID != "http://example.com/3" {
+		t.Errorf("Expected embedded entity id to be http://example.com/3, got %s", embeddedEntity.ID)
+	}
+	if len(embeddedEntity.References) != 1 {
+		t.Errorf("Expected embedded entity references to have 1 property, got %d", len(embeddedEntity.References))
+	}
+	if embeddedEntity.References["http://example.com/country"] != "http://example.com/6" {
+		t.Errorf("Expected embedded entity reference country to be http://example.com/6, got %s", embeddedEntity.References["http://example.com/country"])
+	}
+
+	if entityCollection.Continuation.Token != "1234567890" {
+		t.Errorf("Expected continuation token to be 1234567890, got %s", entityCollection.Continuation.Token)
+	}
+}
+
 func TestToJSONLDWithEmbeddedEntityArray(t *testing.T) {
 
 	byteReader := bytes.NewReader([]byte(`
