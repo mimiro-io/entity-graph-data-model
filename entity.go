@@ -1,6 +1,8 @@
 package egdm
 
-import "errors"
+import (
+	"errors"
+)
 
 type Entity struct {
 	ID         string         `json:"id,omitempty"`

@@ -8,9 +8,10 @@ import (
 
 // EntityCollection is a utility structure for collecting together a set of entities, namespace mappings and a continuation token
 type EntityCollection struct {
-	Entities         []*Entity
-	Continuation     *Continuation
-	NamespaceManager NamespaceManager
+	Entities           []*Entity
+	Continuation       *Continuation
+	NamespaceManager   NamespaceManager
+	OmitContextOnWrite bool
 }
 
 func NewEntityCollection(nsManager NamespaceManager) *EntityCollection {
@@ -22,6 +23,12 @@ func NewEntityCollection(nsManager NamespaceManager) *EntityCollection {
 	ec.NamespaceManager = nsManager
 	ec.Entities = make([]*Entity, 0)
 	return ec
+}
+
+// SetOmitContextOnWrite sets the OmitContextOnWrite flag on the EntityCollection such that when writing the collection
+// to Entity Graph JSON the context is omitted
+func (ec *EntityCollection) SetOmitContextOnWrite(isOmitted bool) {
+	ec.OmitContextOnWrite = isOmitted
 }
 
 // SetContinuationToken sets the continuation token on the EntityCollection
@@ -134,21 +141,30 @@ func (ec *EntityCollection) WriteEntityGraphJSON(writer io.Writer) error {
 	}
 
 	// write context
-	context := NewContext()
-	context.ID = "@context"
-	context.Namespaces = ec.NamespaceManager.GetNamespaceMappings()
-	contextJson, _ := json.Marshal(context)
-	_, err = writer.Write(contextJson)
-	if err != nil {
-		return err
-	}
-
-	// write entities
-	for _, entity := range ec.Entities {
-		_, err = writer.Write([]byte(",\n"))
+	if !ec.OmitContextOnWrite {
+		context := NewContext()
+		context.ID = "@context"
+		context.Namespaces = ec.NamespaceManager.GetNamespaceMappings()
+		contextJson, _ := json.Marshal(context)
+		_, err = writer.Write(contextJson)
 		if err != nil {
 			return err
 		}
+	}
+
+	writtenFirstEntity := false
+
+	// write entities
+	for _, entity := range ec.Entities {
+
+		if writtenFirstEntity || !ec.OmitContextOnWrite {
+			_, err = writer.Write([]byte(",\n"))
+			if err != nil {
+				return err
+			}
+		}
+		writtenFirstEntity = true
+
 		entityJson, err := json.Marshal(entity)
 		if err != nil {
 			return err
