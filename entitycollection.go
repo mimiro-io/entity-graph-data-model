@@ -278,7 +278,7 @@ func (ec *EntityCollection) expandRefValues(values any) (any, error) {
 			if err != nil {
 				return nil, err
 			}
-			values.([]string)[i] = fullRefValue
+			values.([]any)[i] = fullRefValue
 		}
 		return values, nil
 	}
