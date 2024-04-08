@@ -271,10 +271,10 @@ func (ec *EntityCollection) expandRefValues(values any) (any, error) {
 			return nil, err
 		}
 		return fullRefValue, nil
-	case []string:
+	case []any:
 		// expand ref values
-		for i, refValue := range values.([]string) {
-			fullRefValue, err := ec.NamespaceManager.GetFullURI(refValue)
+		for i, refValue := range values.([]any) {
+			fullRefValue, err := ec.NamespaceManager.GetFullURI(refValue.(string))
 			if err != nil {
 				return nil, err
 			}
