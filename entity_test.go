@@ -28,7 +28,7 @@ func TestExpandPrefixes(t *testing.T) {
 	entity.SetProperty("ns0:property1", "value1")
 	entity.SetReference("ns0:reference1", "ns0:entity2")
 	// and some refs in a list
-	entity.SetReference("ns0:reference2", []string{"ns0:entity3", "ns0:entity4"})
+	entity.SetReference("ns0:reference2", []any{"ns0:entity3", "ns0:entity4"})
 
 	// create entity collection and add entity
 	ec := NewEntityCollection(nsManager)
@@ -59,7 +59,7 @@ func TestExpandPrefixes(t *testing.T) {
 	}
 
 	// check that the reference list has been expanded
-	if entity.References["http://data.example.com/things/reference2"].([]string)[0] != "http://data.example.com/things/entity3" {
+	if entity.References["http://data.example.com/things/reference2"].([]any)[0] != "http://data.example.com/things/entity3" {
 		t.Errorf("expected entity reference to be 'http://data.example.com/things/entity3', got '%s'", entity.References["http://data.example.com/things/reference2"].([]string)[0])
 	}
 }

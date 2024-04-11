@@ -271,6 +271,16 @@ func (ec *EntityCollection) expandRefValues(values any) (any, error) {
 			return nil, err
 		}
 		return fullRefValue, nil
+	case []interface{}:
+		// expand ref values
+		for i, refValue := range values.([]interface{}) {
+			fullRefValue, err := ec.NamespaceManager.GetFullURI(refValue.(string))
+			if err != nil {
+				return nil, err
+			}
+			values.([]interface{})[i] = fullRefValue
+		}
+		return values, nil
 	case []string:
 		// expand ref values
 		for i, refValue := range values.([]string) {
