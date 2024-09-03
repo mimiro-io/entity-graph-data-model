@@ -97,8 +97,18 @@ func (esp *EntityParser) GetIdentityValue(value string) (string, error) {
 	}
 
 	// check that there is a valid expansion
-	if !esp.nsManager.DoesExpansionExistForPrefix(identity) {
-		return "", fmt.Errorf("no expansion for prefix: %s", identity)
+	var prefix string
+	if strings.Contains(identity, ":") {
+		// split the prefix and the local name
+		parts := strings.Split(identity, ":")
+		prefix = parts[0]
+	} else {
+		// check for the default prefix
+		prefix = "_"
+	}
+
+	if !esp.nsManager.DoesExpansionExistForPrefix(prefix) {
+		return "", fmt.Errorf("no expansion for prefix: %s", prefix)
 	}
 
 	return identity, nil

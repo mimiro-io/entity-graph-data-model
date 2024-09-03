@@ -1263,6 +1263,56 @@ func TestParserDetectsMissingNamespace(t *testing.T) {
 	}
 }
 
+func TestParserDetectsNamespace(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{ "ns0" : "http://data.sample.org/"}},
+		  {"id":"ns0:1","refs":{},"props":{"http://data.sample.org/Name":"John"}},
+		  {"id":"@continuation","token":"1725182073988287"}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	_, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Error("Error validating namespace expansion")
+	}
+}
+
+func TestParserValidatesDefaultNamespace(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{ "_" : "http://data.sample.org/"}},
+		  {"id":"1","refs":{},"props":{"http://data.sample.org/Name":"John"}},
+		  {"id":"@continuation","token":"1725182073988287"}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	_, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Error("Error validating namespace expansion")
+	}
+}
+
+func TestParserFailsWhenNoDefaultNamespace(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{ "ns0" : "http://data.sample.org/"}},
+		  {"id":"1","refs":{},"props":{"http://data.sample.org/Name":"John"}}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	_, err := parser.LoadEntityCollection(byteReader)
+
+	if err == nil {
+		t.Error("Error validating namespace expansion")
+	}
+}
+
 func TestParserDealsWithNullRefsAndProps(t *testing.T) {
 
 	byteReader := bytes.NewReader([]byte(`
