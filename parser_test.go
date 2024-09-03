@@ -24,7 +24,40 @@ func TestParseValidSimpleEntity(t *testing.T) {
 		]`))
 
 	nsManager := NewNamespaceContext()
-	parser := NewEntityParser(nsManager).WithExpandURIs()
+	parser := NewEntityParser(nsManager) //.WithExpandURIs()
+	entityCollection, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+	if len(entityCollection.Entities) != 1 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "http://example.com/1" {
+		t.Errorf("Expected entity id to be http://example.com/1, got %s", entityCollection.Entities[0].ID)
+	}
+	if len(entityCollection.Entities[0].Properties) != 1 {
+		t.Errorf("Expected entity properties to have 1 property, got %d", len(entityCollection.Entities[0].Properties))
+	}
+	if entityCollection.Entities[0].Properties["http://example.com/name"] != "John Smith" {
+		t.Errorf("Expected entity property name to be John Smith, got %s", entityCollection.Entities[0].Properties["name"])
+	}
+}
+
+func TestParseValidSimpleEntityNoContext(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+			{
+				"id": "http://example.com/1",
+				"props": {
+					"http://example.com/name": "John Smith"
+				}
+			}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager).WithNoContext().WithExpandURIs()
 	entityCollection, err := parser.LoadEntityCollection(byteReader)
 
 	if err != nil {
@@ -1186,4 +1219,113 @@ func TestParseCompressURIs(t *testing.T) {
 		t.Errorf("Expected context namespace ns1 to be http://www.w3.org/1999/02/22-rdf-syntax-ns#, got %s", context.Namespaces["ns1"])
 	}
 
+}
+
+func TestParseNoSpecialInstruction(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[
+{"id":"@context","namespaces":{}},
+{"id":"http://data.sample.org/things/1","refs":{},"props":{"http://data.sample.org/Name":"John"}},
+{"id":"http://data.sample.org/things/2","refs":{},"props":{"http://data.sample.org/Name":"Jane"}},
+{"id":"http://data.sample.org/things/3","refs":{},"props":{"http://data.sample.org/Name":"Jim"}},
+{"id":"@continuation","token":"1725182073988287"}]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	entityCollection, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Errorf("Error parsing entity collection: %s", err)
+	}
+	if len(entityCollection.Entities) != 3 {
+		t.Errorf("Expected 1 entity, got %d", len(entityCollection.Entities))
+	}
+	if entityCollection.Entities[0].ID != "http://data.sample.org/things/1" {
+		t.Errorf("Expected entity id to be ns0:1, got %s", entityCollection.Entities[0].ID)
+	}
+}
+
+func TestParserDetectsMissingNamespace(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{}},
+		  {"id":"ns0:1","refs":{},"props":{"http://data.sample.org/Name":"John"}},
+		  {"id":"@continuation","token":"1725182073988287"}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	_, err := parser.LoadEntityCollection(byteReader)
+
+	if err == nil {
+		t.Error("Failed to detect missing namespace expansion")
+	}
+}
+
+func TestParserDetectsNamespace(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{ "ns0" : "http://data.sample.org/"}},
+		  {"id":"ns0:1","refs":{},"props":{"http://data.sample.org/Name":"John"}},
+		  {"id":"@continuation","token":"1725182073988287"}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	_, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Error("Error validating namespace expansion")
+	}
+}
+
+func TestParserValidatesDefaultNamespace(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{ "_" : "http://data.sample.org/"}},
+		  {"id":"1","refs":{},"props":{"http://data.sample.org/Name":"John"}},
+		  {"id":"@continuation","token":"1725182073988287"}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	_, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Error("Error validating namespace expansion")
+	}
+}
+
+func TestParserFailsWhenNoDefaultNamespace(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{ "ns0" : "http://data.sample.org/"}},
+		  {"id":"1","refs":{},"props":{"http://data.sample.org/Name":"John"}}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	_, err := parser.LoadEntityCollection(byteReader)
+
+	if err == nil {
+		t.Error("Error validating namespace expansion")
+	}
+}
+
+func TestParserDealsWithNullRefsAndProps(t *testing.T) {
+
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{}},
+		  {"id":"http://data.sample.org/1","refs":null,"props":{"http://data.sample.org/Name":"John"}},
+		  {"id":"http://data.sample.org/2","refs":{},"props":null}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	_, err := parser.LoadEntityCollection(byteReader)
+
+	if err != nil {
+		t.Errorf("Failed to parse collection with null refs %s", err)
+	}
 }

@@ -150,3 +150,8 @@ func (aContext *NamespaceContext) GetPrefixedIdentifier(value string) (string, e
 		return value, nil
 	}
 }
+
+func (aContext *NamespaceContext) DoesExpansionExistForPrefix(prefix string) bool {
+	_, found := aContext.prefixToExpansionMappings[prefix]
+	return found
+}
