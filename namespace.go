@@ -10,4 +10,5 @@ type NamespaceManager interface {
 	GetNamespaceMappings() map[string]string
 	AssertPrefixedIdentifierFromURI(URI string) (string, error)
 	AsContext() *Context
+	DoesExpansionExistForPrefix(prefix string) bool
 }

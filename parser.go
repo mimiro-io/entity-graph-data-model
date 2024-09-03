@@ -84,13 +84,24 @@ func (esp *EntityParser) GetIdentityValue(value string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		return identity, nil
 	}
 
 	if esp.expandURIs {
 		return esp.nsManager.GetFullURI(identity)
-	} else {
-		return esp.nsManager.GetPrefixedIdentifier(identity)
 	}
+
+	// needs to be either a full URI or a valid prefixed identifier
+	if esp.nsManager.IsFullUri(identity) {
+		return identity, nil
+	}
+
+	// check that there is a valid expansion
+	if !esp.nsManager.DoesExpansionExistForPrefix(identity) {
+		return "", fmt.Errorf("no expansion for prefix: %s", identity)
+	}
+
+	return identity, nil
 }
 
 func (esp *EntityParser) Parse(reader io.Reader, emitEntity func(*Entity) error, emitContinuation func(*Continuation)) error {
@@ -265,9 +276,18 @@ func (esp *EntityParser) parseEntity(decoder *json.Decoder) (*Entity, error) {
 func (esp *EntityParser) parseReferences(decoder *json.Decoder) (map[string]any, error) {
 	refs := make(map[string]any)
 
-	_, err := decoder.Token()
+	st, err := decoder.Token()
 	if err != nil {
-		return nil, fmt.Errorf("unable to read token of at start of references: %w", err)
+		return nil, fmt.Errorf("unable to read token at start of references: %w", err)
+	}
+
+	if st == nil {
+		// if the value is null then we have no references but dont error
+		return refs, nil
+	}
+
+	if delim, ok := st.(json.Delim); !ok || delim != '{' {
+		return nil, errors.New("expected { at start of references")
 	}
 
 	for {
@@ -301,9 +321,18 @@ func (esp *EntityParser) parseReferences(decoder *json.Decoder) (map[string]any,
 func (esp *EntityParser) parseProperties(decoder *json.Decoder) (map[string]any, error) {
 	props := make(map[string]any)
 
-	_, err := decoder.Token()
+	st, err := decoder.Token()
 	if err != nil {
 		return nil, fmt.Errorf("unable to read token of at start of properties: %w ", err)
+	}
+
+	if st == nil {
+		// handle null gracefully
+		return props, nil
+	}
+
+	if delim, ok := st.(json.Delim); !ok || delim != '{' {
+		return nil, errors.New("expected { at start of references")
 	}
 
 	for {
