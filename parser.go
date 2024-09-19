@@ -75,7 +75,6 @@ func (esp *EntityParser) LoadEntityCollection(reader io.Reader) (*EntityCollecti
 }
 
 func (esp *EntityParser) GetIdentityValue(value string) (string, error) {
-
 	identity := value
 	var err error
 
@@ -111,11 +110,10 @@ func (esp *EntityParser) GetIdentityValue(value string) (string, error) {
 		return "", fmt.Errorf("no expansion for prefix: %s", prefix)
 	}
 
-	return identity, nil
+	return esp.nsManager.GetPrefixedIdentifier(identity)
 }
 
 func (esp *EntityParser) Parse(reader io.Reader, emitEntity func(*Entity) error, emitContinuation func(*Continuation)) error {
-
 	decoder := json.NewDecoder(reader)
 
 	// expect start of array
