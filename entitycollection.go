@@ -249,19 +249,27 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
 			}
 			entity.Properties[fullType] = newEc.GetEntities()
 		case []interface{}:
-			// assuming sub entities
-			newEc := NewEntityCollection(ec.NamespaceManager)
-			for _, subEntity := range propertyValue.([]interface{}) {
-				err = newEc.AddEntityFromMap(subEntity.(map[string]any))
+			switch propertyValue.([]interface{})[0].(type) {
+			case map[string]any:
+				// assuming sub entities
+				newEc := NewEntityCollection(ec.NamespaceManager)
+				for _, subEntity := range propertyValue.([]interface{}) {
+					switch subEntity.(type) {
+					case map[string]any:
+					}
+					err = newEc.AddEntityFromMap(subEntity.(map[string]any))
+					if err != nil {
+						return err
+					}
+				}
+				err = newEc.ExpandNamespacePrefixes()
 				if err != nil {
 					return err
 				}
+				entity.Properties[fullType] = newEc.GetEntities()
+			default:
+				entity.Properties[fullType] = propertyValue
 			}
-			err = newEc.ExpandNamespacePrefixes()
-			if err != nil {
-				return err
-			}
-			entity.Properties[fullType] = newEc.GetEntities()
 		default:
 			entity.Properties[fullType] = propertyValue
 		}
