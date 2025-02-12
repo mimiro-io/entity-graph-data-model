@@ -218,12 +218,14 @@ func (ec *EntityCollection) ExpandNamespacePrefixes() error {
 }
 
 func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
-	// expand id
-	fullID, err := ec.NamespaceManager.GetFullURI(entity.ID)
-	if err != nil {
-		return err
+	// expand id if not empty. Sub entities doesn't require an id.
+	if entity.ID != "" {
+		fullID, err := ec.NamespaceManager.GetFullURI(entity.ID)
+		if err != nil {
+			return err
+		}
+		entity.ID = fullID
 	}
-	entity.ID = fullID
 
 	// expand property types
 	for typeURI, propertyValue := range entity.Properties {
@@ -270,6 +272,29 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
 			default:
 				entity.Properties[fullType] = propertyValue
 			}
+		case map[string]any:
+			// assuming sub entity
+			newEc := NewEntityCollection(ec.NamespaceManager)
+			err = newEc.AddEntityFromMap(propertyValue.(map[string]any))
+			if err != nil {
+				return err
+			}
+			err = newEc.ExpandNamespacePrefixes()
+			if err != nil {
+				return err
+			}
+			entity.Properties[fullType] = newEc.GetEntities()[0]
+		case *Entity:
+			newEc := NewEntityCollection(ec.NamespaceManager)
+			err = newEc.AddEntity(propertyValue.(*Entity))
+			if err != nil {
+				return err
+			}
+			err = newEc.ExpandNamespacePrefixes()
+			if err != nil {
+				return err
+			}
+			entity.Properties[fullType] = newEc.GetEntities()[0]
 		default:
 			entity.Properties[fullType] = propertyValue
 		}
