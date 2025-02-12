@@ -234,8 +234,39 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
 		// remove old key
 		delete(entity.Properties, typeURI)
 
+		switch propertyValue.(type) {
+		case []*Entity:
+			newEc := NewEntityCollection(ec.NamespaceManager)
+			for _, subEntity := range propertyValue.([]*Entity) {
+				err = newEc.AddEntity(subEntity)
+				if err != nil {
+					return err
+				}
+			}
+			err = newEc.ExpandNamespacePrefixes()
+			if err != nil {
+				return err
+			}
+			entity.Properties[fullType] = newEc.GetEntities()
+		case []interface{}:
+			// assuming sub entities
+			newEc := NewEntityCollection(ec.NamespaceManager)
+			for _, subEntity := range propertyValue.([]interface{}) {
+				err = newEc.AddEntityFromMap(subEntity.(map[string]any))
+				if err != nil {
+					return err
+				}
+			}
+			err = newEc.ExpandNamespacePrefixes()
+			if err != nil {
+				return err
+			}
+			entity.Properties[fullType] = newEc.GetEntities()
+		default:
+			entity.Properties[fullType] = propertyValue
+		}
 		// add new key and value
-		entity.Properties[fullType] = propertyValue
+
 	}
 
 	// expand ref types and values
