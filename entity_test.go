@@ -95,6 +95,191 @@ func TestExpandPrefixesWithMissingExpansion(t *testing.T) {
 	}
 }
 
+func TestExpandPrefixesWithValueArray(t *testing.T) {
+	// namespace manager
+	nsManager := NewNamespaceContext()
+	nsManager.StorePrefixExpansionMapping("ns0", "http://data.example.com/things/")
+	// create entity using short form
+	entity := NewEntity().SetID("ns0:entity1")
+
+	// add some properties and references
+	propArray := []any{"value1"}
+	entity.SetProperty("ns0:property1", propArray)
+
+	// create entity collection and add entity
+	ec := NewEntityCollection(nsManager)
+	err := ec.AddEntity(entity)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// expand prefixes
+	err = ec.ExpandNamespacePrefixes()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// check that the property has been expanded
+	if entity.Properties["http://data.example.com/things/property1"].([]any)[0] != propArray[0] {
+		t.Errorf("expected entity property to be array, got '%s'", entity.Properties["http://data.example.com/things/property1"])
+	}
+
+}
+
+func TestExpandPrefixesWithSubEntity(t *testing.T) {
+	// namespace manager
+	nsManager := NewNamespaceContext()
+	nsManager.StorePrefixExpansionMapping("ns0", "http://data.example.com/things/")
+	// create entity using short form
+	entity := NewEntity().SetID("ns0:entity1")
+
+	// add some properties and references
+	subEntity := NewEntity().SetID("ns0:entity2")
+	subEntity.Properties["ns0:subproperty1"] = "value2"
+
+	entity.SetProperty("ns0:subEntity", subEntity)
+
+	// create entity collection and add entity
+	ec := NewEntityCollection(nsManager)
+	err := ec.AddEntity(entity)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// expand prefixes
+	err = ec.ExpandNamespacePrefixes()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// check that the property has been expanded
+	val, exist := entity.Properties["http://data.example.com/things/subEntity"]
+	if exist {
+		sub := val.(*Entity)
+		if sub.Properties["http://data.example.com/things/subproperty1"] != "value2" {
+			t.Errorf("expected sub entity property to be 'value2', got '%s'", sub.Properties["http://data.example.com/things/subproperty1"])
+		}
+	} else {
+		t.Error("expected resolved sub entity property to exist")
+	}
+}
+
+func TestExpandPrefixesWithSubEntityArray(t *testing.T) {
+	// namespace manager
+	nsManager := NewNamespaceContext()
+	nsManager.StorePrefixExpansionMapping("ns0", "http://data.example.com/things/")
+	// create entity using short form
+	entity := NewEntity().SetID("ns0:entity1")
+
+	// add some properties and references
+	var subEntities []*Entity
+	subEntity := NewEntity().SetID("ns0:entity2")
+	subEntity.Properties["ns0:subproperty1"] = "value2"
+	subEntities = append(subEntities, subEntity)
+
+	entity.SetProperty("ns0:subEntities", subEntities)
+
+	// create entity collection and add entity
+	ec := NewEntityCollection(nsManager)
+	err := ec.AddEntity(entity)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// expand prefixes
+	err = ec.ExpandNamespacePrefixes()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// check that the property has been expanded
+	val, exist := entity.Properties["http://data.example.com/things/subEntities"]
+	if exist {
+		sub := val.([]*Entity)[0]
+		if sub.Properties["http://data.example.com/things/subproperty1"] != "value2" {
+			t.Errorf("expected sub entity property to be 'value2', got '%s'", sub.Properties["http://data.example.com/things/subproperty1"])
+		}
+	} else {
+		t.Error("expected resolved sub entity property to exist")
+	}
+}
+
+func TestExpandPrefixesWithSubEntityAsMap(t *testing.T) {
+	// namespace manager
+	nsManager := NewNamespaceContext()
+	nsManager.StorePrefixExpansionMapping("ns0", "http://data.example.com/things/")
+	// create entity using short form
+	entity := NewEntity().SetID("ns0:entity1")
+
+	// add some properties and references
+	subEntity := map[string]any{"id": "ns0:entity2", "props": map[string]any{"ns0:subproperty1": "value2"}}
+
+	entity.SetProperty("ns0:subEntity", subEntity)
+
+	// create entity collection and add entity
+	ec := NewEntityCollection(nsManager)
+	err := ec.AddEntity(entity)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// expand prefixes
+	err = ec.ExpandNamespacePrefixes()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// check that the property has been expanded
+	val, exist := entity.Properties["http://data.example.com/things/subEntity"]
+	if exist {
+		sub := val.(*Entity)
+		if sub.Properties["http://data.example.com/things/subproperty1"] != "value2" {
+			t.Errorf("expected sub entity property to be 'value2', got '%s'", sub.Properties["http://data.example.com/things/subproperty1"])
+		}
+	} else {
+		t.Error("expected resolved sub entity property to exist")
+	}
+}
+
+func TestExpandPrefixesWithSubEntityAsMapArray(t *testing.T) {
+	// namespace manager
+	nsManager := NewNamespaceContext()
+	nsManager.StorePrefixExpansionMapping("ns0", "http://data.example.com/things/")
+	// create entity using short form
+	entity := NewEntity().SetID("ns0:entity1")
+
+	// add some properties and references
+	var subEntities []any
+	subEntity := map[string]any{"id": "ns0:entity2", "props": map[string]any{"ns0:subproperty1": "value2"}}
+	subEntities = append(subEntities, subEntity)
+
+	entity.SetProperty("ns0:subEntities", subEntities)
+
+	// create entity collection and add entity
+	ec := NewEntityCollection(nsManager)
+	err := ec.AddEntity(entity)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// expand prefixes
+	err = ec.ExpandNamespacePrefixes()
+	if err != nil {
+		t.Error(err)
+	}
+
+	// check that the property has been expanded
+	val, exist := entity.Properties["http://data.example.com/things/subEntities"]
+	if exist {
+		sub := val.([]*Entity)[0]
+		if sub.Properties["http://data.example.com/things/subproperty1"] != "value2" {
+			t.Errorf("expected sub entity property to be 'value2', got '%s'", sub.Properties["http://data.example.com/things/subproperty1"])
+		}
+	} else {
+		t.Error("expected resolved sub entity property to exist")
+	}
+}
+
 func TestCreateEntity(t *testing.T) {
 	// create a new entity
 	entity := NewEntity().SetID("ns0:entity1")
