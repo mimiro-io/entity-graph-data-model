@@ -236,10 +236,10 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
 		// remove old key
 		delete(entity.Properties, typeURI)
 
-		switch propertyValue.(type) {
+		switch v := propertyValue.(type) {
 		case []*Entity:
 			newEc := NewEntityCollection(ec.NamespaceManager)
-			for _, subEntity := range propertyValue.([]*Entity) {
+			for _, subEntity := range v {
 				err = newEc.AddEntity(subEntity)
 				if err != nil {
 					return err
@@ -250,15 +250,12 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
 				return err
 			}
 			entity.Properties[fullType] = newEc.GetEntities()
-		case []interface{}:
-			switch propertyValue.([]interface{})[0].(type) {
+		case []any:
+			switch v[0].(type) {
 			case map[string]any:
 				// assuming sub entities
 				newEc := NewEntityCollection(ec.NamespaceManager)
-				for _, subEntity := range propertyValue.([]interface{}) {
-					switch subEntity.(type) {
-					case map[string]any:
-					}
+				for _, subEntity := range v {
 					err = newEc.AddEntityFromMap(subEntity.(map[string]any))
 					if err != nil {
 						return err
@@ -270,12 +267,12 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
 				}
 				entity.Properties[fullType] = newEc.GetEntities()
 			default:
-				entity.Properties[fullType] = propertyValue
+				entity.Properties[fullType] = v
 			}
 		case map[string]any:
 			// assuming sub entity
 			newEc := NewEntityCollection(ec.NamespaceManager)
-			err = newEc.AddEntityFromMap(propertyValue.(map[string]any))
+			err = newEc.AddEntityFromMap(v)
 			if err != nil {
 				return err
 			}
@@ -286,7 +283,7 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
 			entity.Properties[fullType] = newEc.GetEntities()[0]
 		case *Entity:
 			newEc := NewEntityCollection(ec.NamespaceManager)
-			err = newEc.AddEntity(propertyValue.(*Entity))
+			err = newEc.AddEntity(v)
 			if err != nil {
 				return err
 			}
@@ -327,34 +324,34 @@ func (ec *EntityCollection) expandEntityNamespaces(entity *Entity) error {
 
 func (ec *EntityCollection) expandRefValues(values any) (any, error) {
 	// switch if string or []string
-	switch values.(type) {
+	switch v := values.(type) {
 	case string:
 		// expand ref value
-		fullRefValue, err := ec.NamespaceManager.GetFullURI(values.(string))
+		fullRefValue, err := ec.NamespaceManager.GetFullURI(v)
 		if err != nil {
 			return nil, err
 		}
 		return fullRefValue, nil
 	case []interface{}:
 		// expand ref values
-		for i, refValue := range values.([]interface{}) {
+		for i, refValue := range v {
 			fullRefValue, err := ec.NamespaceManager.GetFullURI(refValue.(string))
 			if err != nil {
 				return nil, err
 			}
-			values.([]interface{})[i] = fullRefValue
+			v[i] = fullRefValue
 		}
-		return values, nil
+		return v, nil
 	case []string:
 		// expand ref values
-		for i, refValue := range values.([]string) {
+		for i, refValue := range v {
 			fullRefValue, err := ec.NamespaceManager.GetFullURI(refValue)
 			if err != nil {
 				return nil, err
 			}
-			values.([]string)[i] = fullRefValue
+			v[i] = fullRefValue
 		}
-		return values, nil
+		return v, nil
 	}
 
 	return nil, errors.New("unexpected type in refs")
