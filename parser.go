@@ -216,48 +216,49 @@ func (esp *EntityParser) parseEntity(decoder *json.Decoder) (*Entity, error) {
 				return e, nil
 			}
 		case string:
-			if v == "id" {
+			switch v {
+			case "id":
 				val, err := decoder.Token()
 				if err != nil {
 					return nil, fmt.Errorf("unable to read token of id value: %w", err)
 				}
 
-				if val.(string) == "@continuation" {
+				switch val.(string) {
+				case "@continuation":
 					e.ID = "@continuation"
 					isContinuation = true
-				} else if val.(string) == "@context" {
+				case "@context":
 					return nil, errors.New("context object found when entity expected")
-				} else {
+				default:
 					id, err := esp.GetIdentityValue(val.(string))
 					if err != nil {
 						return nil, err
 					}
 					e.ID = id
 				}
-			} else if v == "recorded" {
+			case "recorded":
 				val, err := decoder.Token()
 				if err != nil {
 					return nil, fmt.Errorf("unable to read token of recorded value: %w", err)
 				}
 				e.Recorded = uint64(val.(float64))
-			} else if v == "deleted" {
+			case "deleted":
 				val, err := decoder.Token()
 				if err != nil {
 					return nil, fmt.Errorf("unable to read token of deleted value: %w", err)
 				}
 				e.IsDeleted = val.(bool)
-
-			} else if v == "props" {
+			case "props":
 				e.Properties, err = esp.parseProperties(decoder)
 				if err != nil {
 					return nil, fmt.Errorf("unable to parse properties: %w", err)
 				}
-			} else if v == "refs" {
+			case "refs":
 				e.References, err = esp.parseReferences(decoder)
 				if err != nil {
 					return nil, fmt.Errorf("unable to parse references %w", err)
 				}
-			} else if v == "token" {
+			case "token":
 				if !isContinuation {
 					return nil, errors.New("token property found but not a continuation entity")
 				}
@@ -267,7 +268,7 @@ func (esp *EntityParser) parseEntity(decoder *json.Decoder) (*Entity, error) {
 				}
 				e.Properties = make(map[string]any)
 				e.Properties["token"] = val
-			} else {
+			default:
 				// log named property
 				// read value
 				_, err := decoder.Token()
@@ -432,15 +433,16 @@ func (esp *EntityParser) parseArray(decoder *json.Decoder) ([]any, error) {
 
 		switch v := t.(type) {
 		case json.Delim:
-			if v == '{' {
+			switch v {
+			case '{':
 				r, err := esp.parseEntity(decoder)
 				if err != nil {
 					return nil, fmt.Errorf("unable to parse array: %w", err)
 				}
 				array = append(array, r)
-			} else if v == ']' {
+			case ']':
 				return array, nil
-			} else if v == '[' {
+			case '[':
 				r, err := esp.parseArray(decoder)
 				if err != nil {
 					return nil, fmt.Errorf("unable to parse array: %w", err)
@@ -475,9 +477,10 @@ func (esp *EntityParser) parseValue(decoder *json.Decoder) (any, error) {
 
 		switch v := t.(type) {
 		case json.Delim:
-			if v == '{' {
+			switch v {
+			case '{':
 				return esp.parseEntity(decoder)
-			} else if v == '[' {
+			case '[':
 				return esp.parseArray(decoder)
 			}
 		case string:

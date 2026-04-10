@@ -1027,7 +1027,9 @@ func TestToJSONLDWithEmbeddedEntityArray(t *testing.T) {
 
 	// write it out again
 	bytesBuffer := bytes.Buffer{}
-	entityCollection.WriteJSON_LD(&bytesBuffer)
+	if err := entityCollection.WriteJSON_LD(&bytesBuffer); err != nil {
+		t.Errorf("Error writing entity collection: %s", err)
+	}
 }
 
 func TestParseWithDefaultNamespaceExpansionInPropName(t *testing.T) {
@@ -1327,5 +1329,101 @@ func TestParserDealsWithNullRefsAndProps(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("Failed to parse collection with null refs %s", err)
+	}
+}
+
+// parseEntity: "recorded" field is parsed into entity.Recorded
+func TestParseEntityWithRecorded(t *testing.T) {
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{}},
+		  {"id":"http://data.example.com/1","recorded":1730979552787404544,"props":{}}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	ec, err := parser.LoadEntityCollection(byteReader)
+	if err != nil {
+		t.Fatalf("Error parsing entity collection: %s", err)
+	}
+	if ec.Entities[0].Recorded != 1730979552787404544 {
+		t.Errorf("expected Recorded=1730979552787404544, got %d", ec.Entities[0].Recorded)
+	}
+}
+
+// parseEntity: "deleted" field is parsed into entity.IsDeleted
+func TestParseEntityWithDeleted(t *testing.T) {
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{}},
+		  {"id":"http://data.example.com/1","deleted":true,"props":{}}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	ec, err := parser.LoadEntityCollection(byteReader)
+	if err != nil {
+		t.Fatalf("Error parsing entity collection: %s", err)
+	}
+	if !ec.Entities[0].IsDeleted {
+		t.Error("expected IsDeleted=true")
+	}
+}
+
+// parseEntity: encountering "@context" as an entity id (not the first element) returns an error
+func TestParseContextObjectAsEntityReturnsError(t *testing.T) {
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{}},
+		  {"id":"@context","namespaces":{}}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	_, err := parser.LoadEntityCollection(byteReader)
+	if err == nil {
+		t.Error("expected error when @context object appears where entity is expected")
+	}
+}
+
+// parseArray: nested array value (the '[' delimiter branch in parseArray)
+func TestParsePropertyWithNestedArray(t *testing.T) {
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{}},
+		  {"id":"http://data.example.com/1","props":{"http://data.example.com/matrix":[[1,2],[3,4]]}}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	ec, err := parser.LoadEntityCollection(byteReader)
+	if err != nil {
+		t.Fatalf("Error parsing entity collection: %s", err)
+	}
+	matrix, ok := ec.Entities[0].Properties["http://data.example.com/matrix"].([]any)
+	if !ok || len(matrix) != 2 {
+		t.Fatalf("expected []any with 2 rows, got %T %v", ec.Entities[0].Properties["http://data.example.com/matrix"], ec.Entities[0].Properties["http://data.example.com/matrix"])
+	}
+	row0, ok := matrix[0].([]any)
+	if !ok || len(row0) != 2 {
+		t.Fatalf("expected row0 to be []any with 2 elements, got %T", matrix[0])
+	}
+}
+
+// parseValue: array as a property value (the '[' delimiter branch in parseValue)
+func TestParsePropertyWithArrayValue(t *testing.T) {
+	byteReader := bytes.NewReader([]byte(`
+		[ {"id":"@context","namespaces":{}},
+		  {"id":"http://data.example.com/1","props":{"http://data.example.com/tags":["a","b","c"]}}
+		]`))
+
+	nsManager := NewNamespaceContext()
+	parser := NewEntityParser(nsManager)
+	ec, err := parser.LoadEntityCollection(byteReader)
+	if err != nil {
+		t.Fatalf("Error parsing entity collection: %s", err)
+	}
+	tags, ok := ec.Entities[0].Properties["http://data.example.com/tags"].([]any)
+	if !ok || len(tags) != 3 {
+		t.Fatalf("expected []any with 3 elements, got %T %v", ec.Entities[0].Properties["http://data.example.com/tags"], ec.Entities[0].Properties["http://data.example.com/tags"])
+	}
+	if tags[0] != "a" || tags[1] != "b" || tags[2] != "c" {
+		t.Errorf("unexpected tag values: %v", tags)
 	}
 }

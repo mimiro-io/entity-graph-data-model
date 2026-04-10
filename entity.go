@@ -72,6 +72,14 @@ func (anEntity *Entity) GetFirstStringPropertyValue(typeURI string) (string, err
 func (anEntity *Entity) GetStringPropertyValues(typeURI string) ([]string, error) {
 	if values, found := anEntity.Properties[typeURI]; found {
 		switch v := values.(type) {
+		case []any:
+			result := make([]string, 0, len(v))
+			for _, val := range v {
+				if strVal, ok := val.(string); ok {
+					result = append(result, strVal)
+				}
+			}
+			return result, nil
 		case []string:
 			return v, nil
 		case string:
